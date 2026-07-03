@@ -1,1 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Breaker Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d1527;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #38bdf8;
+            font-size: 24px;
+            letter-spacing: 2px;
+        }
+        .scoreboard {
+            width: 440px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+        #score { color: #4ade80; font-weight: bold; }
+        #lives { color: #f87171; font-weight: bold; }
+        .game-container {
+            position: relative;
+            width: 440px;
+            height: 360px;
+            border: 3px solid #334155;
+            border-radius: 6px;
+            background-color: #020617;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .screen-overlay.hidden {
+            display: none;
+        }
+        .start-btn {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            font-size: 16px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 15px;
+            box-shadow: 0 4px 0 #0369a1;
+        }
+        .start-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        .info-text {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ARCADE BREAKER</h1>
+    
+    <div class="scoreboard">
+        <div>SCORE: <span id="score">0000</span></div>
+        <div>LIVES: <span id="lives">3</span></div>
+    </div>
+
+    <div class="game-container">
+        <div id="menu-overlay" class="screen-overlay">
+            <div id="menu-title" style="color: #38bdf8; font-size: 18px;">READY PLAYER ONE</div>
+            <button class="start-btn" id="launch-btn">START GAME</button>
+            <div class="info-text">Move mouse or use Left/Right Arrows</div>
+        </div>
+        <canvas id="arcadeCanvas" width="440" height="360"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("arcadeCanvas");
+        const ctx = canvas.getContext("2d");
+        const menuOverlay = document.getElementById("menu-overlay");
+        const launchBtn = document.getElementById("launch-btn");
+        const menuTitle = document.getElementById("menu-title");
+        const scoreElem = document.getElementById("score");
+        const livesElem = document.getElementById("lives");
+
+        // --- SOUND SYSTEM ---
+        let audioCtx = null;
+        function playTone(freq, type, duration) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.log("Audio context blocked"); }
+        }
+
+        // --- CONFIGURATION ---
+        let score = 0;
+        let lives = 3;
+        let active = false;
+
+        const paddleW = 70;
+        const paddleH = 10;
+        let paddleX = (canvas.width - paddleW) / 2;
+        let leftKey = false;
+        let rightKey = false;
+
+        const ballSize = 5;
+        let ballX, ballY, moveX, moveY;
+
+        const rows = 4;
+        const cols = 7;
+        const bW = 52;
+        const bH = 14;
+        const bPad = 6;
+        const bTop = 40;
+        const bLeft = 21;
+        let bricks = [];
+        const colors = ["#ef4444", "#f97316", "#10b981", "#3b82f6"];
+
+        function resetPositions() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height - 25;
+            moveX = 2.5;
+            moveY = -2.5;
+            paddleX = (canvas.width - paddleW) / 2;
+        }
+
+        function createGrid() {
+            bricks = [];
+            for(let c=0; c<cols; c++) {
+                bricks[c] = [];
+                for(let r=0; r<rows; r++) {
+                    bricks[c][r] = { x: 0, y: 0, live: 1 };
+                }
+            }
+        }
+
+        // --- INPUT ENGINE ---
+        document.addEventListener("keydown", (e) => {
+            if(e.key === "ArrowLeft") leftKey = true;
+            if(e.key === "ArrowRight") rightKey = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            if(e.key === "ArrowLeft") leftKey = false;
+            if(e.key === "ArrowRight") rightKey = false;
+        });
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const rootX = e.clientX - rect.left;
+            if(rootX > 0 && rootX < canvas.width) {
+                paddleX = rootX - paddleW / 2;
+            }
+        });
+
+        // --- GAME ENGINE LOOP ---
+        function loop() {
+            if(!active) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Render Bricks & Detect Hits
+            let clusters = 0;
+            for(let c=0; c<cols; c++) {
+                for(let r=0; r<rows; r++) {
+                    let b = bricks[c][r];
+                    if(b.live === 1) {
+                        clusters++;
+                        b.x = (c * (bW + bPad)) + bLeft;
+                        b.y = (r * (bH + bPad)) + bTop;
+                        ctx.fillStyle = colors[r];
+                        ctx.fillRect(b.x, b.y, bW, bH);
+
+                        if(ballX > b.x && ballX < b.x + bW && ballY > b.y && ballY < b.y + bH) {
+                            moveY = -moveY;
+                            b.live = 0;
+                            score += 10;
+                            scoreElem.textContent = String(score).padStart(4, '0');
+                            playTone(440, 'sawtooth', 0.1);
+                        }
+                    }
+                }
+            }
+
+            if(clusters === 0) {
+                playTone(587, 'square', 0.4);
+                endSession("YOU WIN!");
+                return;
+            }
+
+            // Render Paddle
+            ctx.fillStyle = "#38bdf8";
+            ctx.fillRect(paddleX, canvas.height - paddleH - 5, paddleW, paddleH);
+
+            // Render Ball
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballSize, 0, Math.PI*2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+
+            // Wall Collisions
+            if(ballX + moveX > canvas.width - ballSize || ballX + moveX < ballSize) moveX = -moveX;
+            if(ballY + moveY < ballSize) moveY = -moveY;
+            else if(ballY + moveY > canvas.height - ballSize - 5) {
+                if(ballX > paddleX && ballX < paddleX + paddleW) {
+                    moveY = -Math.abs(moveY);
+                    playTone(220, 'triangle', 0.08);
+                } else if(ballY + moveY > canvas.height) {
+                    lives--;
+                    livesElem.textContent = lives;
+                    playTone(110, 'sawtooth', 0.3);
+                    if(lives <= 0) {
+                        endSession("GAME OVER");
+                        return;
+                    } else {
+                        resetPositions();
+                    }
+                }
+            }
+
+            if(rightKey && paddleX < canvas.width - paddleW) paddleX += 6;
+            if(leftKey && paddleX > 0) paddleX -= 6;
+
+            ballX += moveX;
+            ballY += moveY;
+            requestAnimationFrame(loop);
+        }
+
+        function endSession(msg) {
+            active = false;
+            menuTitle.textContent = msg;
+            launchBtn.textContent = "PLAY AGAIN";
+            menuOverlay.classList.remove("hidden");
+        }
+
+        launchBtn.addEventListener("click", () => {
+            score = 0;
+            lives = 3;
+            scoreElem.textContent = "0000";
+            livesElem.textContent = "3";
+            createGrid();
+            resetPositions();
+            menuOverlay.classList.add("hidden");
+            active = true;
+            loop();
+        });
+
+        // Background Pre-render
+        createGrid();
+        for(let c=0; c<cols; c++) {
+            for(let r=0; r<rows; r++) {
+                let b = bricks[c][r];
+                b.x = (c * (bW + bPad)) + bLeft;
+                b.y = (r * (bH + bPad)) + bTop;
+                ctx.fillStyle = colors[r];
+                ctx.fillRect(b.x, b.y, bW, bH);
+            }
+        }
+    </script>
+</body>
+</html>
 
