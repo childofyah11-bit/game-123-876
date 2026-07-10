@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Nexus: Orbit Link</title>
+    <title>game</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         :root {
@@ -24,6 +24,7 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            overflow: hidden;
         }
         h1 {
             font-family: 'Orbitron', sans-serif;
@@ -40,7 +41,7 @@
             border-radius: 12px;
             max-width: 420px;
             width: 100%;
-            margin-top: 50px;
+            margin-top: 80px;
             box-shadow: 0 0 25px rgba(0,0,0,0.8);
             text-align: center;
         }
@@ -70,30 +71,26 @@
         button:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 0 10px var(--accent); }
         .main-layout {
             display: none;
-            gap: 20px;
-            max-width: 1100px;
-            width: 100%;
-            margin-top: 20px;
-        }
-        .game-column {
-            flex: 1.7;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
             flex-direction: column;
             align-items: center;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(8, 52px);
-            grid-template-rows: repeat(8, 52px);
-            gap: 5px;
-            margin: 20px 0;
+            grid-template-columns: repeat(10, 55px);
+            grid-template-rows: repeat(10, 55px);
+            gap: 6px;
+            margin: 15px 0;
             background: #020205;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 10px;
             border: 1px solid var(--border);
         }
         .cell {
@@ -103,47 +100,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
-            transition: background 0.1s;
+            font-size: 28px;
+            transition: background 0.1s, transform 0.1s;
         }
-        .chat-column {
-            flex: 1.3;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            height: 560px;
-        }
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            background: #020205;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-        }
-        .chat-msg { margin-bottom: 10px; font-size: 14px; line-height: 1.4; }
-        .chat-user { color: var(--accent); font-weight: bold; }
-        .chat-peer { color: var(--accent2); font-weight: bold; }
-        .chat-system { color: var(--system); font-style: italic; }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 150px; }
-        .controls button { margin: 0; padding: 12px; background: #16192e; border: 1px solid var(--border); color: white; }
-        .status-header { font-size: 14px; color: #8b949e; margin-bottom: 10px; }
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 180px; margin-top: 10px; }
+        .controls button { margin: 0; padding: 14px; background: #16192e; border: 1px solid var(--border); color: white; border-radius: 8px;}
+        .status-header { font-size: 15px; color: #8b949e; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
     </style>
-    <!-- Public server connection client network asset library library -->
+    <!-- Public server connection client network asset library -->
     <script src="https://unpkg.com"></script>
 </head>
 <body>
 
-    <h1>🌌 Cosmic Nexus: Orbit Link</h1>
-    <div style="font-size: 14px; color: var(--system);">Automated Relay Matrix Sandbox Layer</div>
+    <h1>🌌 Cosmic Nexus: Sector Control</h1>
+    <div style="font-size: 14px; color: var(--system); margin-bottom: 10px;">Automated Relay Matrix Sandbox Layer</div>
 
     <!-- Login Matrix Panel -->
     <div class="setup-panel" id="loginScreen">
-        <h3 style="color:white; margin-top:0;">📡 Map Server Telemetry</h3>
+        <h3 style="color:white; margin-top:0;">📡 Map Sector Telemetry</h3>
         <input type="text" id="nameBox" placeholder="Enter Your Callsign (e.g., Pilot_1)">
         <input type="text" id="roomBox" placeholder="Enter Room Key (e.g., alpha-sector)">
         <button onclick="connectToRelayNetwork()">Launch Orbit Link</button>
@@ -152,22 +126,12 @@
 
     <!-- Main Live Interactive Grid Panel -->
     <div class="main-layout" id="gameScreen">
-        <div class="game-column">
-            <div class="status-header" id="syncStatus">Syncing tracking vector coordinates...</div>
-            <div class="grid" id="matrixContainer"></div>
-            <div class="controls">
-                <div></div><button onclick="triggerShift(0, -1)">▲</button><div></div>
-                <button onclick="triggerShift(-1, 0)">◀</button><div></div><button onclick="triggerShift(1, 0)">▶</button>
-                <div></div><button onclick="triggerShift(0, 1)">▼</button><div></div>
-            </div>
-        </div>
-        <div class="chat-column">
-            <h3 style="margin-top:0; color:white; font-size:16px;">📟 Orbit Comms Stream</h3>
-            <div class="chat-box" id="messageLogs"></div>
-            <div style="display:flex; gap:8px;">
-                <input type="text" id="msgInput" placeholder="Broadcast encryption packet..." onkeydown="if(event.key==='Enter') dispatchChat()">
-                <button style="width:90px; margin:0;" onclick="dispatchChat()">Send</button>
-            </div>
+        <div class="status-header" id="syncStatus">Syncing tracking vector coordinates...</div>
+        <div class="grid" id="matrixContainer"></div>
+        <div class="controls">
+            <div></div><button onclick="triggerShift(0, -1)">▲</button><div></div>
+            <button onclick="triggerShift(-1, 0)">◀</button><div></div><button onclick="triggerShift(1, 0)">▶</button>
+            <div></div><button onclick="triggerShift(0, 1)">▼</button><div></div>
         </div>
     </div>
 
@@ -176,8 +140,8 @@
     let currentCallsign = "";
     let targetTopicLane = "";
     
-    let localX = Math.floor(Math.random() * 8);
-    let localY = Math.floor(Math.random() * 8);
+    let localX = Math.floor(Math.random() * 10);
+    let localY = Math.floor(Math.random() * 10);
     let sessionUserList = {};
 
     function connectToRelayNetwork() {
@@ -189,25 +153,23 @@
             return;
         }
 
-        targetTopicLane = `cosmicnexus/rooms/${roomSignature}`;
+        targetTopicLane = `cosmicnexus/sectors/${roomSignature}`;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('gameScreen').style.display = 'flex';
         
         buildInteractiveGrid();
-        logNotice(`Connecting to public matrix relay...`);
 
         // Connect over free public HiveMQ open web broker layer automatically
         networkClient = mqtt.connect('wss://://hivemq.com');
 
         networkClient.on('connect', () => {
             document.getElementById('syncStatus').innerText = `Sector: ${roomSignature} | Pilot: ${currentCallsign}`;
-            logNotice(`Connection established. Listening to data stream...`);
             
             // Subscribe to room updates
             networkClient.subscribe(targetTopicLane);
             
             // Instantly announce presence
-            sendNetworkPulse('join', `has dropped into orbit link sector.`);
+            sendNetworkPulse('join', `connected`);
         });
 
         networkClient.on('message', (topic, message) => {
@@ -219,13 +181,9 @@
                     sessionUserList[packet.sender] = { x: packet.gridX, y: packet.gridY, activeTime: Date.now() };
                     renderPositions();
                     if(packet.action === 'join') {
-                        logNotice(`${packet.sender} ${packet.payloadText}`);
-                        // Respond with position metrics to register on their client
-                        sendNetworkPulse('sync', 'updating matrix positioning mapping data');
+                        // Respond with position metrics to register on their client instantly
+                        sendNetworkPulse('sync', 'updating matrix positioning data');
                     }
-                }
-                if(packet.action === 'chat') {
-                    appendChatMsg(packet.sender, packet.payloadText, false);
                 }
             } catch(err) {
                 // Ignore unexpected stream garbage safely
@@ -238,7 +196,6 @@
             let changed = false;
             Object.keys(sessionUserList).forEach(user => {
                 if(sessionUserList[user].activeTime < cutoff) {
-                    logNotice(`${user} signaling link went dead.`);
                     delete sessionUserList[user];
                     changed = true;
                 }
@@ -249,3 +206,49 @@
 
     function buildInteractiveGrid() {
         const grid = document.getElementById('matrixContainer');
+        grid.innerHTML = "";
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 10; x++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `grid-sector-${x}-${y}`;
+                grid.appendChild(cell);
+            }
+        }
+        renderPositions();
+    }
+
+    function renderPositions() {
+        document.querySelectorAll('.cell').forEach(c => {
+            c.innerText = "";
+            c.style.background = "#0e101f";
+            c.style.borderColor = "#16192e";
+            c.style.transform = "scale(1)";
+        });
+
+        // Pin local coordinate entity profile
+        const localCell = document.getElementById(`grid-sector-${localX}-${localY}`);
+        if(localCell) {
+            localCell.innerText = "🛸";
+            localCell.style.background = "rgba(0, 255, 170, 0.15)";
+            localCell.style.borderColor = "var(--accent)";
+            localCell.style.transform = "scale(1.05)";
+        }
+
+        // Pin mapped online player assets
+        Object.keys(sessionUserList).forEach(user => {
+            const data = sessionUserList[user];
+            const peerCell = document.getElementById(`grid-sector-${data.x}-${data.y}`);
+            if(peerCell) {
+                peerCell.innerText = "👾";
+                peerCell.style.background = "rgba(157, 78, 221, 0.15)";
+                peerCell.style.borderColor = "var(--accent2)";
+            }
+        });
+    }
+
+    function triggerShift(dx, dy) {
+        let nextX = Math.max(0, Math.min(9, localX + dx));
+        let nextY = Math.max(0, Math.min(9, localY + dy));
+        if(nextX !== localX || nextY !== localY) {
+            localX = nextX;
