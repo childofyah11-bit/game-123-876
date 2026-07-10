@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>3D Vector Cyber Tunnel Engine</title>
+  <title>3D Hyper Cyber Tunnel</title>
   <style>
     * { 
       margin: 0; 
@@ -11,7 +11,7 @@
       box-sizing: border-box; 
     }
     body { 
-      background-color: #050508; 
+      background: #000; 
       overflow: hidden; 
       touch-action: none;
       -webkit-user-select: none;
@@ -21,7 +21,7 @@
       display: block; 
       width: 100vw; 
       height: 100vh; 
-      cursor: crosshair;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -30,22 +30,23 @@
 
   <script>
     const canvas = document.getElementById('tunnelCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); // Performance tweak: disables alpha blending channel on canvas base
+    // Performance optimization: turn off base canvas alpha rendering channels
+    const ctx = canvas.getContext('2d', { alpha: false }); 
 
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
+    // Fluid tracking variables to prevent mouse motion snapping
     let mouse = { x: width / 2, y: height / 2, targetX: width / 2, targetY: height / 2 };
-    
-    // Smooth pointer interpolation tracking (Prevents snapping jitter)
-    const pointerHandler = (x, y) => {
-      mouse.targetX = x;
-      mouse.targetY = y;
+
+    const updatePointer = (clientX, clientY) => {
+      mouse.targetX = clientX;
+      mouse.targetY = clientY;
     };
 
-    window.addEventListener('mousemove', (e) => pointerHandler(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => updatePointer(e.clientX, e.clientY));
     window.addEventListener('touchmove', (e) => {
-      if(e.touches.length > 0) pointerHandler(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.touches.length > 0) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
 
     window.addEventListener('resize', () => {
@@ -53,98 +54,138 @@
       height = canvas.height = window.innerHeight;
     });
 
-    // Configuration Engine Variables
-    const maxRings = 45;       // Optimized ring depth allocation density
-    const segments = 8;       // Upgraded to Octagonal structure matrix for a sleeker sci-fi look
+    // --- Interactive Combo System ---
+    let clickCount = 0;
+    let clickTimer = null;
+    let isWarpActive = false;
+    let warpEnergy = 0; // Animates from 0 (normal) to 1 (full hyper-warp)
+
+    const handleInteraction = () => {
+      clickCount++;
+      clearTimeout(clickTimer);
+
+      // Reset count if user pauses clicking for too long
+      clickTimer = setTimeout(() => { clickCount = 0; }, 400);
+
+      // Trigger structural event on the exact 3rd action frame
+      if (clickCount === 3) {
+        isWarpActive = true;
+        clickCount = 0;
+        // Automatically slow back down smoothly after 3.5 seconds
+        setTimeout(() => { isWarpActive = false; }, 3500);
+      }
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('touchstart', (e) => {
+      if(e.touches.length > 0) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+      handleInteraction();
+    }, { passive: true });
+
+    // --- Engine Configuration Core ---
+    const maxRings = 50; 
+    const segments = 8; // Octagonal grid matrix mapping
     let rings = [];
-    let speed = 0.006;        // Base engine forward translation warp velocity
     let frame = 0;
 
-    // Initialize depth coordinates
     for (let i = 0; i < maxRings; i++) {
       rings.push({ z: (i / maxRings) * 1.2 });
     }
 
-    // Secondary Spatial Vector Stars Particle Array
-    const stars = Array.from({ length: 60 }, () => ({
-      x: (Math.random() - 0.5) * 800,
-      y: (Math.random() - 0.5) * 800,
+    // Velocity field background particles
+    const spaceStars = Array.from({ length: 80 }, () => ({
+      x: (Math.random() - 0.5) * 1000,
+      y: (Math.random() - 0.5) * 1000,
       z: Math.random() * 1.2
     }));
 
     function draw() {
-      // Linear mouse tracking dampening simulation loop
-      mouse.x += (mouse.targetX - mouse.x) * 0.08;
-      mouse.y += (mouse.targetY - mouse.y) * 0.08;
+      // Dynamic linear dampening calculations for modern displays
+      mouse.x += (mouse.targetX - mouse.x) * 0.1;
+      mouse.y += (mouse.targetY - mouse.y) * 0.1;
 
-      // Dark sci-fi trailing motion-blur backdrop execution
-      ctx.fillStyle = 'rgba(5, 5, 8, 0.18)';
+      // Smoothly interpolate current engine speeds towards targets
+      let targetWarp = isWarpActive ? 1 : 0;
+      warpEnergy += (targetWarp - warpEnergy) * 0.05;
+
+      let speedModifier = 0.0012 + (warpEnergy * 0.015);
+
+      // Set trailing motion blur based on structural velocity
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.16 - (warpEnergy * 0.08)})`;
       ctx.fillRect(0, 0, width, height);
       frame++;
 
-      // Phase 1: Draw Deep Background Space Vector Particles
-      stars.forEach(star => {
-        star.z -= speed * 1.5; // Stars sprint past faster for depth variation
-        if (star.z <= 0) star.z = 1.2;
+      // Phase 1: Deep Vector Space Stars (Stretch into lines under Hyper-Warp)
+      spaceStars.forEach(star => {
+        star.z -= speedModifier * 2.2;
+        if (star.z <= 0) {
+          star.z = 1.2;
+          star.x = (Math.random() - 0.5) * 1000;
+          star.y = (Math.random() - 0.5) * 1000;
+        }
 
         let starScale = 1.2 / star.z;
-        let sx = width / 2 + (star.x + (mouse.x - width / 2) * -0.3) * starScale;
-        let sy = height / 2 + (star.y + (mouse.y - height / 2) * -0.3) * starScale;
+        let sx = width / 2 + (star.x + (mouse.x - width / 2) * -0.4) * starScale;
+        let sy = height / 2 + (star.y + (mouse.y - height / 2) * -0.4) * starScale;
+
+        // Calculate tail positions to generate warp velocity lines
+        let prevZ = star.z + (speedModifier * 2.2);
+        let prevScale = 1.2 / prevZ;
+        let px = width / 2 + (star.x + (mouse.x - width / 2) * -0.4) * prevScale;
+        let py = height / 2 + (star.y + (mouse.y - height / 2) * -0.4) * prevScale;
 
         if (sx >= 0 && sx <= width && sy >= 0 && sy <= height) {
-          ctx.fillStyle = `rgba(0, 173, 181, ${Math.min(1, 1 - star.z)})`;
-          ctx.fillRect(sx, sy, Math.max(1, starScale * 0.6), Math.max(1, starScale * 0.6));
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(sx, sy);
+          ctx.strokeStyle = `rgba(0, 243, 255, ${Math.min(1, 1.2 - star.z)})`;
+          ctx.lineWidth = Math.max(1, starScale * 0.4);
+          ctx.stroke();
         }
       });
 
-      // Phase 2: Render 3D Octagonal Tunnel Topology
+      // Phase 2: Render 3D Geometry Loops
       for (let i = maxRings - 1; i >= 0; i--) {
         let ring = rings[i];
-        ring.z -= speed;
+        ring.z -= speedModifier;
 
-        if (ring.z <= 0) {
-          ring.z = 1.2; // Recycles far depth plane gracefully
+        if (ring.z <= 0) ring.z = 1.2;
+
+        // 3D Matrix Perspective Projection Calculations
+        let scale = (0.95 + (warpEnergy * 0.8)) / ring.z;
+        let radius = 45 * scale;
+
+        let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * 0.75);
+        let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * 0.75);
+
+        // Compute colors (shift to electric white/cyan when full warp energy is reached)
+        let hue = (i * 8 + frame * 2.5) % 360;
+        let strokeColor = `hsla(${hue}, 100%, 65%, ${1 - ring.z / 1.2})`;
+        if (warpEnergy > 0.1) {
+          strokeColor = `hsla(${180 + (hue * 0.1)}, 100%, ${65 + (warpEnergy * 35)}%, ${1 - ring.z / 1.2})`;
         }
 
-        // 3D Perspective Projections Calculations
-        let scale = 1.0 / ring.z;
-        let radius = 60 * scale; 
-
-        // Warp center convergence offsets away from direct user sightlines
-        let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * 0.7);
-        let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * 0.7);
-
-        // Core Synthesizer Cyber Palette Calculations
-        let hue = (i * 7 + frame * 1.5) % 360;
-        let alpha = Math.min(1, 1.2 - ring.z) * (1 - (ring.z / 1.2));
-
         ctx.beginPath();
-        
-        // Loop segment construction nodes linking points securely across canvas pipelines
         for (let j = 0; j <= segments; j++) {
-          // Dynamic clockwise rotational offset twist calculations
-          let spinAngle = frame * 0.003 * (1.2 - ring.z);
+          // Dynamic clockwise axial rotation speed alterations
+          let spinAngle = frame * (0.003 + warpEnergy * 0.008) * (1.2 - ring.z);
           let angle = (j / segments) * Math.PI * 2 + spinAngle;
-          
+
           let currX = targetX + Math.cos(angle) * radius;
           let currY = targetY + Math.sin(angle) * radius;
 
-          if (j === 0) {
-            ctx.moveTo(currX, currY);
-          } else {
-            ctx.lineTo(currX, currY);
-          }
+          if (j === 0) ctx.moveTo(currX, currY);
+          else ctx.lineTo(currX, currY);
         }
         ctx.closePath();
 
-        // Neon Glow Vector Styling Engine Links
-        ctx.strokeStyle = `hsla(${hue}, 95%, 55%, ${alpha})`;
-        ctx.lineWidth = Math.max(0.8, 3.5 * (1 - ring.z / 1.2));
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = Math.max(0.8, (2.8 + (warpEnergy * 3)) * (1 - ring.z / 1.2));
         ctx.stroke();
 
-        // Optional: Occasional grid connector lines between depth fields
-        if (i % 4 === 0) {
-          ctx.fillStyle = `hsla(${hue}, 90%, 50%, ${alpha * 0.04})`;
+        // Under high warp vectors, draw connecting crosshairs across rings
+        if (isWarpActive && i % 6 === 0) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.03 * (1 - ring.z)})`;
           ctx.fill();
         }
       }
@@ -152,7 +193,6 @@
       requestAnimationFrame(draw);
     }
 
-    // Start Engine
     draw();
   </script>
 </body>
