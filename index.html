@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitSync Arena & Chat</title>
+    <title>Quantum Mesh Arena</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         :root {
-            --bg: #0d1117;
-            --panel: #161b22;
-            --border: #30363d;
-            --accent: #58a6ff;
-            --text: #c9d1d9;
-            --green: #238636;
+            --bg: #05050d;
+            --panel: #0b0c16;
+            --border: #1f2335;
+            --accent: #00ffff;
+            --accent2: #ff007f;
+            --text: #a9b1d6;
+            --green: #73daca;
         }
         body {
             margin: 0;
@@ -23,258 +24,253 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            overflow-x: hidden;
         }
         h1 {
             font-family: 'Orbitron', sans-serif;
             color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             margin-bottom: 5px;
         }
         .setup-panel {
             background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 500px;
+            border: 2px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 450px;
             width: 100%;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            margin-top: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+            text-align: center;
         }
         input, button {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            background: #21262d;
+            padding: 12px;
+            margin: 10px 0;
+            background: #1a1b26;
             border: 1px solid var(--border);
             border-radius: 6px;
             color: white;
             font-family: inherit;
             box-sizing: border-box;
+            font-size: 15px;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
         }
         button {
-            background: var(--green);
+            background: linear-gradient(90deg, var(--accent2), #bc00dd);
             cursor: pointer;
             font-weight: bold;
             border: none;
-            transition: opacity 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.1s, opacity 0.2s;
         }
-        button:hover { opacity: 0.9; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
         .main-layout {
             display: none;
-            gap: 20px;
+            gap: 25px;
             max-width: 1100px;
             width: 100%;
+            margin-top: 15px;
         }
         .game-column {
-            flex: 2;
+            flex: 1.8;
             background: var(--panel);
             border: 1px solid var(--border);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(8, 45px);
-            grid-template-rows: repeat(8, 45px);
-            gap: 4px;
-            margin-top: 15px;
-            background: #010409;
-            padding: 10px;
-            border-radius: 6px;
+            grid-template-columns: repeat(9, 50px);
+            grid-template-rows: repeat(9, 50px);
+            gap: 5px;
+            margin: 20px 0;
+            background: #020205;
+            padding: 12px;
+            border-radius: 8px;
             border: 1px solid var(--border);
         }
         .cell {
-            background: #161b22;
-            border: 1px solid #21262d;
+            background: #121324;
+            border: 1px solid #1a1b26;
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: background 0.2s;
+            font-size: 24px;
+            transition: all 0.15s;
         }
-        .cell:hover { background: #30363d; }
         .chat-column {
-            flex: 1;
+            flex: 1.2;
             background: var(--panel);
             border: 1px solid var(--border);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
-            height: 500px;
+            height: 560px;
         }
         .chat-box {
             flex: 1;
             overflow-y: auto;
             border: 1px solid var(--border);
-            background: #010409;
-            padding: 10px;
+            background: #020205;
+            padding: 12px;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
         .chat-msg {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 14px;
             line-height: 1.4;
+            word-break: break-word;
         }
         .chat-user { color: var(--accent); font-weight: bold; }
-        .chat-system { color: #8b949e; font-style: italic; }
+        .chat-peer { color: var(--accent2); font-weight: bold; }
+        .chat-system { color: #565f89; font-style: italic; }
         .controls {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            width: 150px;
-            margin-top: 15px;
+            gap: 6px;
+            width: 160px;
+        }
+        .controls button { margin: 0; padding: 10px; background: #1f2335; border: 1px solid var(--border); }
+        .status-tag {
+            font-size: 13px;
+            color: var(--green);
+            background: rgba(115, 218, 202, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(115, 218, 202, 0.2);
+            margin-bottom: 15px;
         }
     </style>
+    <!-- Include free public scaling signaling backend library -->
+    <script src="https://unpkg.com"></script>
 </head>
 <body>
 
-    <h1>🛰️ GitSync Arena & Chat</h1>
-    <div style="font-size: 13px; color: #8b949e; margin-bottom: 20px;">Powered Serverless-ly via GitHub Issue Streams</div>
+    <h1>🌌 Quantum Mesh Arena</h1>
+    <div style="font-size: 14px; color: #565f89;">Direct Peer-to-Peer Grid Interface & Messaging Pipeline</div>
 
-    <!-- GitHub Handshake Configuration -->
-    <div class="setup-panel" id="setup">
-        <h3>🔗 Connect Server Pipeline</h3>
-        <label>Fine-Grained GitHub Token (Needs Issue Access):</label>
-        <input type="password" id="token" placeholder="github_pat_...">
-        <label>Repository Owner Profile:</label>
-        <input type="text" id="owner" placeholder="childofyah11-bit">
-        <label>Repository Workspace Target:</label>
-        <input type="text" id="repo" placeholder="game-123-876">
-        <label>Target Sync Thread ID (Issue ID #):</label>
-        <input type="number" id="issueId" placeholder="1" value="1">
-        <button onclick="initializeConnection()">Authorize Engine Match</button>
+    <!-- Connection Orchestration Screen Layout -->
+    <div class="setup-panel" id="setupSection">
+        <h3 style="color:white; margin-top:0;">📡 Initialize Quantum Link</h3>
+        <input type="text" id="aliasInput" placeholder="Enter Your Callsign (e.g., Pilot_X)">
+        <input type="text" id="roomInput" placeholder="Create or Join Room Key (e.g., sector-9)">
+        <button onclick="bootMeshEngine()">Connect Telemetry</button>
+        <p style="font-size: 12px; color: #565f89; margin-top: 15px;">Share your Room Key with a friend. Once you both join the same key, your nodes sync automatically.</p>
     </div>
 
-    <!-- Active Interface Arena Layout -->
-    <div class="main-layout" id="arena">
+    <!-- Active Gameplay Layout -->
+    <div class="main-layout" id="arenaLayout">
         <div class="game-column">
-            <h3>🛡️ Tactical Battle Matrix</h3>
-            <div style="font-size:12px; color:#8b949e;">Use layout buttons below or WASD keys to move your avatar token</div>
-            <div class="grid" id="grid"></div>
+            <div class="status-tag" id="networkStatus">Status: Synchronizing local proxy...</div>
+            <div class="grid" id="matrixGrid"></div>
             <div class="controls">
-                <div></div><button onclick="movePlayer(0, -1)">▲</button><div></div>
-                <button onclick="movePlayer(-1, 0)">◀</button><div></div><button onclick="movePlayer(1, 0)">▶</button>
-                <div></div><button onclick="movePlayer(0, 1)">▼</button><div></div>
+                <div></div><button onclick="executeMovement(0, -1)">▲</button><div></div>
+                <button onclick="executeMovement(-1, 0)">◀</button><div></div><button onclick="executeMovement(1, 0)">▶</button>
+                <div></div><button onclick="executeMovement(0, 1)">▼</button><div></div>
             </div>
         </div>
         <div class="chat-column">
-            <h3>💬 Live Commit-Chat Stream</h3>
-            <div class="chat-box" id="chatBox"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="chatInput" placeholder="Broadcasting message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                <button style="width:80px;" onclick="sendChatMessage()">Send</button>
+            <h3 style="margin-top:0; color:white; font-size:16px;">📟 Sub-Space Comms</h3>
+            <div class="chat-box" id="msgBox"></div>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="textInput" placeholder="Type encryption message..." onkeydown="if(event.key==='Enter') pushTextMessage()">
+                <button style="width:90px; margin:0;" onclick="pushTextMessage()">Send</button>
             </div>
         </div>
     </div>
 
 <script>
-    let GITHUB_TOKEN = "";
-    let REPO_OWNER = "";
-    let REPO_NAME = "";
-    let ISSUE_NUMBER = "";
+    let peerInstance = null;
+    let peerConnection = null;
+    let localAlias = "";
+    let TargetRoomKey = "";
     
-    let username = "Pilot_" + Math.floor(Math.random() * 900 + 100);
-    let playerX = Math.floor(Math.random() * 8);
-    let playerY = Math.floor(Math.random() * 8);
-    let playerColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+    let localX = Math.floor(Math.random() * 9);
+    let localY = Math.floor(Math.random() * 9);
+    const localEmoji = "🛸";
+    
+    let remotePlayers = {};
 
-    let processedCommentIds = new Set();
-    let globalGameState = {};
+    function bootMeshEngine() {
+        localAlias = document.getElementById('aliasInput').value.trim() || "Pilot_" + Math.floor(Math.random()*900+100);
+        TargetRoomKey = document.getElementById('roomInput').value.trim().toLowerCase();
 
-    // Initial Engine Authentication Bindings
-    function initializeConnection() {
-        GITHUB_TOKEN = document.getElementById('token').value.trim();
-        REPO_OWNER = document.getElementById('owner').value.trim();
-        REPO_NAME = document.getElementById('repo').value.trim();
-        ISSUE_NUMBER = document.getElementById('issueId').value.trim();
-
-        if(!GITHUB_TOKEN || !REPO_OWNER || !REPO_NAME || !ISSUE_NUMBER) {
-            alert("❌ Core engine fields missing structural configuration values.");
+        if(!TargetRoomKey) {
+            alert("❌ A distinct Room Key signature is required to open an transmission link.");
             return;
         }
 
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('arena').style.display = 'flex';
+        document.getElementById('setupSection').style.display = 'none';
+        document.getElementById('arenaLayout').style.display = 'flex';
         
-        generateGrid();
-        // Register local structural baseline state
-        broadcastState("join", `System matrix entered by user: ${username}`);
-        
-        // Boot execution cycle sync engine loop
-        setInterval(fetchServerSync, 3500);
-        fetchServerSync();
+        buildGridMatrix();
+
+        // Initialize PeerJS over open cloud relay infrastructure
+        // Room validation routes via unique structured id names: roomKey-alias
+        peerInstance = new Peer(`${TargetRoomKey}-${localAlias}`);
+
+        peerInstance.on('open', (id) => {
+            document.getElementById('networkStatus').innerText = `Room: ${TargetRoomKey} | Call-sign: ${localAlias}`;
+            writeSystemNotice(`Initialized network routing node. Discovering room signals...`);
+            
+            // Scan for existing peer nodes (Attempt to connect to room anchor)
+            scanAndConnectRoom();
+        });
+
+        // Handle incoming connection configurations automatically
+        peerInstance.on('connection', (conn) => {
+            setupConnectionListeners(conn);
+        });
+
+        peerInstance.on('error', (err) => {
+            if(err.type === 'unavailable-id') {
+                alert("❌ Call-sign active in current sector. Change your identifier name.");
+                location.reload();
+            } else {
+                console.error("Mesh tracking anomaly encountered:", err);
+            }
+        });
     }
 
-    function generateGrid() {
-        const gridElement = document.getElementById('grid');
-        gridElement.innerHTML = "";
-        for (let y = 0; y < 8; y++) {
-            for (let x = 0; x < 8; x++) {
+    function buildGridMatrix() {
+        const grid = document.getElementById('matrixGrid');
+        grid.innerHTML = "";
+        for (let y = 0; y < 9; y++) {
+            for (let x = 0; x < 9; x++) {
                 let cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.id = `cell-${x}-${y}`;
-                gridElement.appendChild(cell);
+                grid.appendChild(cell);
             }
         }
-        renderLocalPositions();
+        refreshGridPositions();
     }
 
-    function renderLocalPositions() {
-        // Clear board visually before recalculating data metrics
+    function refreshGridPositions() {
         document.querySelectorAll('.cell').forEach(c => {
             c.innerText = "";
-            c.style.background = "#161b22";
+            c.style.boxShadow = "none";
         });
 
-        // Loop dynamic online tracking profiles
-        Object.keys(globalGameState).forEach(user => {
-            const data = globalGameState[user];
-            const targetCell = document.getElementById(`cell-${data.x}-${data.y}`);
-            if(targetCell) {
-                targetCell.innerText = user === username ? "🛸" : "👾";
-                targetCell.style.background = data.color || '#58a6ff';
-            }
-        });
-    }
-
-    function movePlayer(dx, dy) {
-        let newX = Math.max(0, Math.min(7, playerX + dx));
-        let newY = Math.max(0, Math.min(7, playerY + dy));
-        if(newX !== playerX || newY !== playerY) {
-            playerX = newX;
-            playerY = newY;
-            broadcastState("move", `Maneuvered vector positions to standard coordinate sector (${playerX}, ${playerY})`);
+        // Set local target indicator position
+        const localCell = document.getElementById(`cell-${localX}-${localY}`);
+        if(localCell) {
+            localCell.innerText = localEmoji;
+            localCell.style.boxShadow = "inset 0 0 8px #00ffff";
         }
-    }
 
-    // Keyboard navigation hooks
-    window.addEventListener('keydown', (e) => {
-        if(document.activeElement === document.getElementById('chatInput')) return;
-        if(e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') movePlayer(0, -1);
-        if(e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') movePlayer(-1, 0);
-        if(e.key.toLowerCase() === 's' || e.key === 'ArrowDown') movePlayer(0, 1);
-        if(e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') movePlayer(1, 0);
-    });
-
-    // Post data metrics up directly into target Issue thread comment matrix
-    async fun broadcastState(actionType, messageText) {
-        const payload = {
-            signature: "GIT_SYNC_DATA_STREAM",
-            user: username,
-            type: actionType,
-            msg: messageText,
-            x: playerX,
-            y: playerY,
-            color: playerColor,
-            time: Date.now()
-        };
-
-        try {
+        // Map relative remote player entities
+        Object.keys(remotePlayers).forEach(peerName => {
