@@ -11,7 +11,7 @@
       box-sizing: border-box; 
     }
     body { 
-      background: #000; 
+      background: #010103; 
       overflow: hidden; 
       touch-action: none;
       -webkit-user-select: none;
@@ -53,12 +53,12 @@
       height = canvas.height = window.innerHeight;
     });
 
-    // --- Interactive Key/Click Modifiers ---
+    // --- Interactive Fluid Modifiers ---
     let clickCount = 0;
     let clickTimer = null;
-    let warpEnergy = 0;   // Triple click trigger
-    let brakeEnergy = 0;  // Spacebar hold trigger
-    let slowMoEnergy = 0; // Shift key hold trigger
+    let warpEnergy = 0;   
+    let brakeEnergy = 0;  
+    let slowMoEnergy = 0; 
 
     let isWarpActive = false;
     let isSpacePressed = false;
@@ -85,109 +85,126 @@
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') isShiftPressed = false;
     });
 
-    // --- Hypnotic Visual Engine ---
+    // --- Hypnotic Configuration Properties ---
     let frame = 0;
-    const totalRings = 80; // High count for continuous tunnel density
+    const totalRings = 95; // Increased rendering layers for a smoother depth transition profile
 
     function draw() {
-      // Smooth tracking interpolation
-      mouse.x += (mouse.targetX - mouse.x) * 0.05;
-      mouse.y += (mouse.targetY - mouse.y) * 0.05;
+      // Smoothly process tracking coordinates to guarantee flow fluidity
+      mouse.x += (mouse.targetX - mouse.x) * 0.04;
+      mouse.y += (mouse.targetY - mouse.y) * 0.04;
 
-      // Energy smoothing transition matrices
-      warpEnergy += ((isWarpActive ? 1 : 0) - warpEnergy) * 0.05;
-      brakeEnergy += ((isSpacePressed ? 1 : 0) - brakeEnergy) * 0.1;
-      slowMoEnergy += ((isShiftPressed ? 1 : 0) - slowMoEnergy) * 0.08;
+      warpEnergy += ((isWarpActive ? 1 : 0) - warpEnergy) * 0.03;
+      brakeEnergy += ((isSpacePressed ? 1 : 0) - brakeEnergy) * 0.08;
+      slowMoEnergy += ((isShiftPressed ? 1 : 0) - slowMoEnergy) * 0.06;
 
-      // Variable trail fade calculation
-      let fadeAlpha = 0.06 + (brakeEnergy * 0.15) - (warpEnergy * 0.03);
-      ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0.02, Math.min(0.3, fadeAlpha))})`;
+      // Soft trailing motion blur values prevent long-term retinal fatigue
+      let fadeAlpha = 0.05 + (brakeEnergy * 0.12) - (warpEnergy * 0.02);
+      ctx.fillStyle = `rgba(1, 1, 3, ${Math.max(0.015, Math.min(0.25, fadeAlpha))})`;
       ctx.fillRect(0, 0, width, height);
 
-      // System clock speed variables mapped to interaction parameters
-      let speedFactor = 1.0 + (warpEnergy * 2.5) - (slowMoEnergy * 0.75);
-      frame += 0.02 * speedFactor;
+      let speedFactor = 1.0 + (warpEnergy * 2.2) - (slowMoEnergy * 0.7);
+      frame += 0.015 * speedFactor;
 
-      // Calculate localized vortex center
-      let centerX = width / 2 + (mouse.x - width / 2) * (0.3 + brakeEnergy * 0.4);
-      let centerY = height / 2 + (mouse.y - height / 2) * (0.3 + brakeEnergy * 0.4);
+      // Localized breathing pattern tracks camera oscillations gently
+      let cameraBreatheX = Math.sin(frame * 0.4) * 15;
+      let cameraBreatheY = Math.cos(frame * 0.3) * 15;
+      let centerX = width / 2 + (mouse.x - width / 2) * (0.25 + brakeEnergy * 0.35) + cameraBreatheX;
+      let centerY = height / 2 + (mouse.y - height / 2) * (0.25 + brakeEnergy * 0.35) + cameraBreatheY;
 
-      // Background Starfield Track Simulation
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.3 * (1 - slowMoEnergy)})`;
-      for(let s = 0; s < 30; s++) {
-        let starAngle = (s * 13.3 + frame * 0.1) % (Math.PI * 2);
-        let starRadius = ((s * 25 + frame * 100) % (Math.max(width, height) * 0.8));
+      // Deep Cosmic Nebula Star Layer
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.25 * (1 - slowMoEnergy)})`;
+      for (let s = 0; s < 45; s++) {
+        let starAngle = (s * 17.7 + frame * 0.06) % (Math.PI * 2);
+        let starRadius = ((s * 22 + frame * 75) % (Math.max(width, height) * 0.85));
         let sx = centerX + Math.cos(starAngle) * starRadius;
         let sy = centerY + Math.sin(starAngle) * starRadius;
-        ctx.fillRect(sx, sy, 1.5, 1.5);
+        
+        // Stars breathe and twinkle naturally based on localized radial distances
+        let sizePulse = 0.6 + Math.sin(frame * 2 + s) * 0.5;
+        ctx.fillRect(sx, sy, sizePulse, sizePulse);
       }
 
       // Main Kaleidoscope Layer Generation Loop
       for (let i = totalRings; i > 0; i--) {
-        // Logarithmic scaling calculation simulates natural depth progression
-        let depth = i / totalRings;
-        let progress = (i * 0.03 - frame) % 1;
+        let progress = (i * 0.025 - frame * 0.6) % 1;
         if (progress < 0) progress += 1;
 
-        // Perspective projections
-        let scale = Math.pow(1 - progress, 3);
-        let radius = scale * Math.max(width, height) * (1.2 + warpEnergy * 0.8);
+        // Exponential perspective distribution smooths depth movement jumps
+        let scale = Math.pow(1 - progress, 3.5);
+        let radius = scale * Math.max(width, height) * (1.3 + warpEnergy * 0.7);
         
-        if (radius < 2) continue;
+        if (radius < 3) continue;
 
-        // Dynamic multi-axis wave offsets
-        let waveOffset = Math.sin(progress * 12 - frame * 4) * (20 + brakeEnergy * 60);
-        let currentX = centerX + Math.cos(frame + progress * 4) * waveOffset;
-        let currentY = centerY + Math.sin(frame + progress * 4) * waveOffset;
+        // Multi-layered chaotic wave matrices warp layouts organically
+        let waveMultiplier = 35 + brakeEnergy * 90;
+        let waveOffsetA = Math.sin(progress * 9 - frame * 2.5) * waveMultiplier;
+        let waveOffsetB = Math.cos(progress * 14 + frame * 1.8) * (waveMultiplier * 0.5);
 
-        // Hypnotic spectrum palette calculations
-        let hue = (progress * 360 + frame * 50) % 360;
-        let saturation = 100 - (brakeEnergy * 30);
-        let lightness = 55 + Math.sin(progress * Math.PI - frame) * 15;
+        let currentX = centerX + Math.cos(frame * 0.5 + progress * 3) * waveOffsetA + Math.sin(frame * 0.3) * waveOffsetB;
+        let currentY = centerY + Math.sin(frame * 0.5 + progress * 3) * waveOffsetA + Math.cos(frame * 0.3) * waveOffsetB;
 
-        // Color override modifications matching modifier matrix states
+        // Soft gradient calculation pipeline limits blinding neon spikes
+        let hue = (progress * 360 + frame * 35) % 360;
+        let saturation = 95 - (brakeEnergy * 25);
+        let lightness = 52 + Math.sin(progress * Math.PI * 2 - frame * 2) * 12;
+
         if (warpEnergy > 0.1) {
-          hue = (hue * 0.2 + 180) % 360; // Shifting toward bright cyber cyans
-          lightness += warpEnergy * 20;
+          hue = (hue * 0.15 + 190) % 360; 
+          lightness += warpEnergy * 15;
         }
         if (slowMoEnergy > 0.1) {
-          hue = (hue * 0.1 + 120) % 360; // Shifting toward vibrant matrix greens
+          hue = (hue * 0.08 + 140) % 360; 
         }
 
-        ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${progress})`;
-        ctx.lineWidth = Math.max(0.5, scale * (4 + warpEnergy * 8));
+        ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${progress * (1 - progress * 0.3)})`;
+        ctx.lineWidth = Math.max(0.6, scale * (4.5 + warpEnergy * 7));
 
-        // Render Geometry Node Configuration
-        let nodes = 4 + Math.floor(4 * (1 - slowMoEnergy)); // Intercept shapes cleanly on modifier updates
+        // --- Render Organic Bezier Ribbon Ribs ---
+        let nodes = 5; 
         ctx.beginPath();
-        for (let j = 0; j <= nodes; j++) {
-          let rotationalSpin = frame * 0.2 * (1 + warpEnergy) * (1 - progress);
-          let angle = (j / nodes) * Math.PI * 2 + rotationalSpin;
-          
-          let rx = currentX + Math.cos(angle) * radius;
-          let ry = currentY + Math.sin(angle) * radius;
+        
+        let startAngle = frame * 0.1 * (1 - progress);
+        let firstX = currentX + Math.cos(startAngle) * radius;
+        let firstY = currentY + Math.sin(startAngle) * radius;
+        ctx.moveTo(firstX, firstY);
 
-          if (j === 0) ctx.moveTo(rx, ry);
-          else ctx.lineTo(rx, ry);
+        for (let j = 1; j <= nodes; j++) {
+          let rotationalSpin = frame * 0.12 * (1 + warpEnergy * 0.5) * (1 - progress);
+          let angleA = ((j - 1) / nodes) * Math.PI * 2 + rotationalSpin;
+          let angleB = (j / nodes) * Math.PI * 2 + rotationalSpin;
+          
+          let pA_x = currentX + Math.cos(angleA) * radius;
+          let pA_y = currentY + Math.sin(angleA) * radius;
+          let pB_x = currentX + Math.cos(angleB) * radius;
+          let pB_y = currentY + Math.sin(angleB) * radius;
+
+          // Compute control vectors dynamically to generate smooth curving lines
+          let controlAngle = angleA + (angleB - angleA) / 2 + Math.sin(frame + i) * 0.1;
+          let controlRadius = radius * (1.05 + Math.sin(frame * 2 + j) * 0.08 * (1 - slowMoEnergy));
+          let cpX = currentX + Math.cos(controlAngle) * controlRadius;
+          let cpY = currentY + Math.sin(controlAngle) * controlRadius;
+
+          ctx.quadraticCurveTo(cpX, cpY, pB_x, pB_y);
         }
-        ctx.closePath();
         ctx.stroke();
 
-        // Secondary Counter-Rotating Concentric Accent Track Layer
-        if (progress > 0.3 && progress < 0.8) {
+        // Secondary Counter-Rotating Hypnotic Concentric Veil Track
+        if (progress > 0.25 && progress < 0.85) {
           ctx.beginPath();
-          ctx.arc(currentX, currentY, radius * 0.4, 0, Math.PI * 2);
-          ctx.strokeStyle = `hsla(${(hue + 180) % 360}, 90%, 50%, ${progress * 0.25})`;
-          ctx.lineWidth = 0.6;
+          let innerRadius = radius * (0.35 + Math.sin(frame * 1.5 + i * 0.05) * 0.04);
+          ctx.arc(currentX, currentY, innerRadius, 0, Math.PI * 2);
+          
+          let innerHue = (hue + 160) % 360; // Complementary spectral mapping balance
+          ctx.strokeStyle = `hsla(${innerHue}, 90%, 48%, ${progress * 0.18})`;
+          ctx.lineWidth = 0.5 + scale * 1.5;
           ctx.stroke();
         }
       }
 
-      // Loop scheduling request linkage execution track
       requestAnimationFrame(draw);
     }
 
-    // Initialize animation rendering loop sequences seamlessly
     draw();
   </script>
 </body>
