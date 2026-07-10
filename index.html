@@ -2,227 +2,272 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>game link</title>
-    <link href="https://googleapis.com" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Void Marauders: Synthesized Sector Extraction</title>
     <style>
-        :root {
-            --bg: #020206;
-            --panel: #070810;
-            --border: #141930;
-            --neon-green: #00ffaa;
-            --neon-pink: #ff0055;
-            --neon-blue: #00ffff;
-            --neon-gold: #ffcc00;
-            --text: #c5cbe3;
-            --muted: #4e5579;
-        }
         body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121214;
+            color: #e1e1e6;
             margin: 0;
-            background-color: var(--bg);
-            font-family: 'Share Tech Mono', monospace;
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-            overflow: hidden;
+            padding: 15px;
+            touch-action: manipulation;
             user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
         }
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--neon-green);
-            text-shadow: 0 0 15px rgba(0, 255, 170, 0.4);
+            margin-bottom: 2px;
+            color: #00adb5;
             text-transform: uppercase;
-            letter-spacing: 4px;
-            margin: 5px 0 2px 0;
-            font-size: 26px;
+            letter-spacing: 2px;
+            font-size: 24px;
         }
-        .container {
+        .subtitle {
+            margin-top: 0;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        /* Game Dashboard Structure mapping Void Marauders UI */
+        .game-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #141416;
+            border: 2px solid #29292e;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .status-bar {
+            background: #1a1a1e;
+            border: 1px solid #29292e;
+            padding: 10px;
+            border-radius: 6px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 960px;
-            width: 100%;
-            background: var(--panel);
-            border: 2px solid var(--border);
-            padding: 12px;
-            border-radius: 14px;
-            box-shadow: 0 0 35px rgba(0,0,0,0.7);
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .status-item span {
+            color: #00adb5;
+        }
+        .status-item.frags span {
+            color: #ff4a4a;
         }
         canvas {
+            background-color: #050507;
+            border: 1px solid #1f1f23;
+            border-radius: 4px;
             display: block;
-            background: #010204;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.03);
+            margin: 0 auto;
+            max-width: 100%;
             cursor: crosshair;
         }
-        .sys-log {
-            font-size: 13px;
-            color: var(--neon-blue);
-            background: rgba(0, 255, 255, 0.05);
-            padding: 5px 15px;
-            border-radius: 6px;
-            border: 1px solid rgba(0, 255, 255, 0.1);
-            margin-bottom: 8px;
-            text-align: center;
-            width: 90%;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-        .hud {
+        /* Hybrid Synthesizer Controller Studio Layout Integration */
+        .control-panel {
+            background-color: #1a1a1e;
+            border: 2px solid #29292e;
+            border-radius: 8px;
+            max-width: 580px;
+            margin: 15px auto 0 auto;
+            padding: 15px;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            width: 100%;
-            max-width: 940px;
-            font-size: 13px;
-            color: var(--text);
-            background: #0a0b14;
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            margin-top: 8px;
-            text-align: center;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
-        .hud-val { font-weight: bold; font-family: 'Orbitron', sans-serif; }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .control-group label {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .control-group label span {
+            color: #00adb5;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #00adb5;
+            cursor: pointer;
+        }
+        select {
+            padding: 8px;
+            background: #222831;
+            color: #fff;
+            border: 2px solid #393e46;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        /* Touch Keyboard Layout Integration */
+        .keyboard {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            max-width: 610px;
+            margin: 15px auto;
+        }
+        .pad {
+            flex: 1;
+            height: 70px;
+            background-color: #222831;
+            border: 2px solid #393e46;
+            border-radius: 6px;
+            color: #eeeeee;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .pad:active {
+            background-color: #00adb5;
+            border-color: #eeeeee;
+            color: #222831;
+        }
+        .controls-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
-    <!-- FIXED: Bound to a completely static CDN build to prevent modern script module initialization crashes -->
-    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
 
     <h1>🛸 Void Marauders: Sector Extraction</h1>
-    <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">🌌 Co-op Defend • Cargo Loot Hunt • Real-Time Open PvP Matchmaking</div>
+    <p class="subtitle">Co-op Defend • Cargo Loot Hunt • Real-Time Open PvP Matchmaking</p>
 
-    <div class="container">
-        <div class="sys-log" id="systemMonitor">Calibrating ship systems & hyper-comms loop...</div>
-        <canvas id="gameCanvas" width="940" height="520"></canvas>
-        <div class="hud">
-            <div>🚀 SHIP ID: <span class="hud-val" id="hudId" style="color:var(--neon-green)">---</span></div>
-            <div>⚔️ LOADOUT: <span class="hud-val" id="hudLoadout" style="color:var(--neon-blue)">PLASMA</span></div>
-            <div>🛡️ CORE EXP: <span class="hud-val" id="hudExp" style="color:var(--neon-gold)">0 XP</span></div>
-            <div>🏆 FRAGS: <span class="hud-val" id="hudFrags" style="color:var(--neon-pink)">0 KILLS</span></div>
+    <div class="game-container">
+        <!-- Live Dashboard Data -->
+        <div class="status-bar">
+            <div class="status-item">🚀 SHIP ID: <span id="shipIdDisplay">GENERATING...</span></div>
+            <div class="status-item">⚔️ LOADOUT: <span id="loadoutDisplay">PLASMA</span></div>
+            <div class="status-item">🛡️ CORE EXP: <span id="xpDisplay">0 XP</span></div>
+            <div class="status-item frags">🏆 FRAGS: <span id="fragsDisplay">0 KILLS</span></div>
         </div>
-        <div style="font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center;">
-            ✈️ Move: WASD / Arrows • 🖱️ Aim: Mouse • 🔥 Shoot: Left Click • 🔄 Switch Loadouts: Press 1, 2, or 3
+
+        <!-- System Alert Bar -->
+        <div style="background: rgba(0,173,181,0.1); border: 1px solid #00adb5; color: #00adb5; font-size: 11px; padding: 5px; border-radius: 4px; margin-bottom: 10px; letter-spacing: 1px;" id="sysAlert">
+            CALIBRATING SHIP SYSTEMS & HYPER-COMMS LOOP...
+        </div>
+
+        <!-- Tactical View Canvas -->
+        <canvas id="gameCanvas" width="560" height="320"></canvas>
+        
+        <div class="controls-hint">
+            ✈️ Move: <b>WASD / Arrows</b> • 🖱️ Aim: <b>Mouse</b> • 🔥 Shoot: <b>Left Click or Press Pads</b> • 🔄 Loadouts: <b>1, 2, 3</b>
         </div>
     </div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let mqttClient = null;
+    <!-- Musical Interaction Grid Pads -->
+    <div class="keyboard">
+        <div class="pad" id="pad1" data-freq="261.63">C</div>
+        <div class="pad" id="pad2" data-freq="293.66">D</div>
+        <div class="pad" id="pad3" data-freq="329.63">E</div>
+        <div class="pad" id="pad4" data-freq="349.23">F</div>
+        <div class="pad" id="pad5" data-freq="392.00">G</div>
+    </div>
 
-    const myID = "Marauder_" + Math.floor(Math.random() * 9000 + 1000);
-    const networkTopic = `voidmarauders/sectors/global-action-theater`;
-    document.getElementById('hudId').innerText = myID;
+    <!-- Integrated Audio Control Studio Dashboard -->
+    <div class="control-panel">
+        <div class="control-group">
+            <label>Wave Shape (Oscillator Type)</label>
+            <select id="waveType">
+                <option value="sine">Sine (Smooth / Pure)</option>
+                <option value="square" selected>Square (Retro / Chiptune)</option>
+                <option value="sawtooth">Sawtooth (Aggressive / Lead)</option>
+                <option value="triangle">Triangle (Deep / Mellow)</option>
+            </select>
+        </div>
 
-    let ship = {
-        id: myID, x: Math.random() * (canvas.width - 200) + 100, y: Math.random() * (canvas.height - 200) + 100,
-        vx: 0, vy: 0, speed: 4.8, angle: 0, weapon: 1, exp: 0, frags: 0, color: '#00ffaa'
-    };
+        <div class="control-group">
+            <label>Volume Boost <span id="volVal">0.3</span></label>
+            <input type="range" id="volume" min="0" max="1" step="0.05" value="0.3">
+        </div>
 
-    let localLasers = [], remotePlayers = {}, remoteLasers = [];
-    let aiDrones = [], cargoNodes = [], particles = [], messageFloats = [];
-    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-    let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
-    let spawnTimer = 0, lastNetworkEmit = 0;
+        <div class="control-group">
+            <label>Note Duration / Release (Seconds) <span id="lengthVal">0.4</span></label>
+            <input type="range" id="noteLength" min="0.1" max="2.0" step="0.1" value="0.4">
+        </div>
 
-    window.addEventListener('DOMContentLoaded', () => {
-        initializeInputTracking();
-        connectToRelayNetwork();
-        requestAnimationFrame(engineFrameTick);
-    });
+        <div class="control-group">
+            <label>Low-Pass Filter Cutoff (Hz) <span id="filterVal">2000</span></label>
+            <input type="range" id="filterCutoff" min="200" max="5000" step="50" value="2000">
+        </div>
+    </div>
 
-    function connectToRelayNetwork() {
-        // Connect over free public HiveMQ open web broker layer automatically
-        mqttClient = mqtt.connect('wss://://hivemq.com');
+    <script>
+        // Setup Canvas and Context Engine Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        mqttClient.on('connect', () => {
-            updateMonitor(`🛰️ RADAR LINK ONLINE | PILOT ID: ${myID}`);
-            mqttClient.subscribe(networkTopic);
-            emitPulse('spawn', ship);
-        });
+        // State Dashboard Elements Links
+        const shipIdDisplay = document.getElementById('shipIdDisplay');
+        const loadoutDisplay = document.getElementById('loadoutDisplay');
+        const xpDisplay = document.getElementById('xpDisplay');
+        const fragsDisplay = document.getElementById('fragsDisplay');
+        const sysAlert = document.getElementById('sysAlert');
 
-        mqttClient.on('message', (topic, msg) => {
-            try {
-                const packet = JSON.parse(msg.toString());
-                if (packet.sender === myID) return;
+        // UI Target Elements Variables Mapping
+        const waveTypeSelect = document.getElementById("waveType");
+        const volumeSlider = document.getElementById("volume");
+        const lengthSlider = document.getElementById("noteLength");
+        const filterSlider = document.getElementById("filterCutoff");
 
-                if (packet.action === 'update' || packet.action === 'spawn') {
-                    remotePlayers[packet.sender] = {
-                        x: packet.data.x, y: packet.data.y, angle: packet.data.angle,
-                        weapon: packet.data.weapon, exp: packet.data.exp, frags: packet.data.frags, ts: Date.now()
-                    };
-                    if (packet.action === 'spawn') emitPulse('update', ship);
-                }
-                if (packet.action === 'fire') remoteLasers.push(packet.data);
-                if (packet.action === 'kill' && packet.targetId === myID) executeRespawn(packet.sender);
-                if (packet.action === 'syncCargo') cargoNodes = packet.data;
-            } catch (e) {}
-        });
+        // Sync Text Displays with Slider Values Matrix
+        volumeSlider.oninput = function() { document.getElementById("volVal").innerText = this.value; }
+        lengthSlider.oninput = function() { document.getElementById("lengthVal").innerText = this.value; }
+        filterSlider.oninput = function() { document.getElementById("filterVal").innerText = this.value; }
 
-        mqttClient.on('error', (err) => {
-            console.error("Broker connection drop caught:", err);
-        });
+        // Dynamic State Processing
+        let score = 0;
+        let xp = 0;
+        const shipId = "VM-" + Math.floor(1000 + Math.random() * 9000);
+        shipIdDisplay.textContent = shipId;
 
-        setInterval(() => {
-            let cutoff = Date.now() - 4000;
-            Object.keys(remotePlayers).forEach(p => { if (remotePlayers[p].ts < cutoff) delete remotePlayers[p]; });
-        }, 2000);
-    }
-
-    function initializeInputTracking() {
-        window.addEventListener('keydown', e => {
-            if (e.key in keys) keys[e.key] = true;
-            if (e.key === '1') { ship.weapon = 1; document.getElementById('hudLoadout').innerText = "PLASMA"; document.getElementById('hudLoadout').style.color = "var(--neon-blue)"; }
-            if (e.key === '2') { ship.weapon = 2; document.getElementById('hudLoadout').innerText = "TRI-BEAM"; document.getElementById('hudLoadout').style.color = "var(--neon-green)"; }
-            if (e.key === '3') { ship.weapon = 3; document.getElementById('hudLoadout').innerText = "SLUG-CORE"; document.getElementById('hudLoadout').style.color = "var(--neon-pink)"; }
-        });
-        window.addEventListener('keyup', e => { if (e.key in keys) keys[e.key] = false; });
+        // Cross-browser Audio Context infrastructure
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
         
-        canvas.addEventListener('mousemove', e => {
-            const r = canvas.getBoundingClientRect();
-            mouseX = e.clientX - r.left;
-            mouseY = e.clientY - r.top;
-        });
-        canvas.addEventListener('mousedown', e => { if (e.button === 0) dispatchWeaponBlast(); });
-    }
-
-    function dispatchWeaponBlast() {
-        if (ship.weapon === 1) { 
-            localLasers.push(createLaser(ship.angle, 12, 35, 'var(--neon-blue)', 1));
-        } else if (ship.weapon === 2) { 
-            localLasers.push(createLaser(ship.angle, 10, 30, 'var(--neon-green)', 0.6));
-            localLasers.push(createLaser(ship.angle - 0.18, 10, 30, 'var(--neon-green)', 0.6));
-            localLasers.push(createLaser(ship.angle + 0.18, 10, 30, 'var(--neon-green)', 0.6));
-        } else if (ship.weapon === 3) { 
-            localLasers.push(createLaser(ship.angle, 16, 60, 'var(--neon-pink)', 3.5, 6));
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                sysAlert.textContent = "HYPER-COMMS LINK ESTABLISHED - AUDIO SYNTH ONLINE";
+                setTimeout(() => { sysAlert.textContent = "SYSTEM OPERATIONAL • READY FOR EXTRACTION"; }, 3000);
+            }
         }
-    }
 
-    function createLaser(ang, speed, life, color, dmg, size = 3) {
-        let l = { id: myID + "_" + Math.random(), owner: myID, x: ship.x, y: ship.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life, color, dmg, size };
-        emitPulse('fire', l);
-        return l;
-    }
+        // Integrated dynamic custom pitch tone synth engine player
+        function playTone(frequency) {
+            initAudio();
+            if (!audioCtx) return;
 
-    function executeRespawn(attacker) {
-        createExplosionSplash(ship.x, ship.y, 'var(--neon-pink)', 25);
-        ship.x = Math.random() * (canvas.width - 200) + 100;
-        ship.y = Math.random() * (canvas.height - 200) + 100;
-        ship.vx = 0; ship.vy = 0;
-        updateMonitor(`💥 COMBAT WARNING: HULL LIQUIDATED BY ${attacker}! RE-MANUFACTURING NODE...`);
-        setTimeout(() => { updateMonitor(`🛰️ RADAR LINK ONLINE | PILOT ID: ${myID}`); }, 3000);
-    }
+            // Create low-level Web Audio nodes
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            const filterNode = audioCtx.createBiquadFilter();
 
-    function engineFrameTick() {
-        ship.vx = 0; ship.vy = 0;
-        if (keys.w || keys.ArrowUp) ship.vy = -ship.speed;
-        if (keys.s || keys.ArrowDown) ship.vy = ship.speed;
-        if (keys.a || keys.ArrowLeft) ship.vx = -ship.speed;
-        if (keys.d || keys.ArrowRight) ship.vx = ship.speed;
+            // Link Nodes: Oscillator -> Filter -> Gain Node -> Audio Speakers Output
+            osc.connect(filterNode);
+            filterNode.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
-        ship.x = Math.max(15, Math.min(canvas.width - 15, ship.x + ship.vx));
-        ship.y = Math.max(15, Math.min(canvas.height - 15, ship.y + ship.vy));
+            // Apply Values directly from GUI Sliders
+            osc.type = waveTypeSelect.value;
+            
+            // Apply unique loadout scaling variables to custom pitch ranges
+            let activeFreq = frequency;
+            if (player.loadout === 'BEAM') activeFreq *= 1.5;
+            if (player.loadout === 'BURST') activeFreq *= 0.7;
+
