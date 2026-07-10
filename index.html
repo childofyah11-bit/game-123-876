@@ -3,300 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcade Breaker Game</title>
+    <title>GitSync Arena & Chat</title>
+    <link href="https://googleapis.com" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0d1117;
+            --panel: #161b22;
+            --border: #30363d;
+            --accent: #58a6ff;
+            --text: #c9d1d9;
+            --green: #238636;
+        }
         body {
             margin: 0;
-            padding: 0;
-            background-color: #0d1527;
-            color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            user-select: none;
+            padding: 20px;
         }
         h1 {
-            margin: 0 0 10px 0;
-            color: #38bdf8;
-            font-size: 24px;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            text-transform: uppercase;
             letter-spacing: 2px;
+            margin-bottom: 5px;
         }
-        .scoreboard {
-            width: 440px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-            margin-bottom: 8px;
-            color: #94a3b8;
-        }
-        #score { color: #4ade80; font-weight: bold; }
-        #lives { color: #f87171; font-weight: bold; }
-        .game-container {
-            position: relative;
-            width: 440px;
-            height: 360px;
-            border: 3px solid #334155;
-            border-radius: 6px;
-            background-color: #020617;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-        }
-        .screen-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .setup-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
             width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.9);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            background: #21262d;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: white;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        button {
+            background: var(--green);
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .main-layout {
+            display: none;
+            gap: 20px;
+            max-width: 1100px;
+            width: 100%;
+        }
+        .game-column {
+            flex: 2;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 10;
         }
-        .screen-overlay.hidden {
-            display: none;
-        }
-        .start-btn {
-            background: #0284c7;
-            color: #fff;
-            border: none;
-            padding: 10px 24px;
-            font-size: 16px;
-            font-family: inherit;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 45px);
+            grid-template-rows: repeat(8, 45px);
+            gap: 4px;
             margin-top: 15px;
-            box-shadow: 0 4px 0 #0369a1;
+            background: #010409;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
         }
-        .start-btn:active {
-            transform: translateY(4px);
-            box-shadow: none;
+        .cell {
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        .info-text {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 12px;
+        .cell:hover { background: #30363d; }
+        .chat-column {
+            flex: 1;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            background: #010409;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .chat-msg {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .chat-user { color: var(--accent); font-weight: bold; }
+        .chat-system { color: #8b949e; font-style: italic; }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 150px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-    <h1>ARCADE BREAKER</h1>
-    
-    <div class="scoreboard">
-        <div>SCORE: <span id="score">0000</span></div>
-        <div>LIVES: <span id="lives">3</span></div>
+    <h1>🛰️ GitSync Arena & Chat</h1>
+    <div style="font-size: 13px; color: #8b949e; margin-bottom: 20px;">Powered Serverless-ly via GitHub Issue Streams</div>
+
+    <!-- GitHub Handshake Configuration -->
+    <div class="setup-panel" id="setup">
+        <h3>🔗 Connect Server Pipeline</h3>
+        <label>Fine-Grained GitHub Token (Needs Issue Access):</label>
+        <input type="password" id="token" placeholder="github_pat_...">
+        <label>Repository Owner Profile:</label>
+        <input type="text" id="owner" placeholder="childofyah11-bit">
+        <label>Repository Workspace Target:</label>
+        <input type="text" id="repo" placeholder="game-123-876">
+        <label>Target Sync Thread ID (Issue ID #):</label>
+        <input type="number" id="issueId" placeholder="1" value="1">
+        <button onclick="initializeConnection()">Authorize Engine Match</button>
     </div>
 
-    <div class="game-container">
-        <div id="menu-overlay" class="screen-overlay">
-            <div id="menu-title" style="color: #38bdf8; font-size: 18px;">READY PLAYER ONE</div>
-            <button class="start-btn" id="launch-btn">START GAME</button>
-            <div class="info-text">Move mouse or use Left/Right Arrows</div>
+    <!-- Active Interface Arena Layout -->
+    <div class="main-layout" id="arena">
+        <div class="game-column">
+            <h3>🛡️ Tactical Battle Matrix</h3>
+            <div style="font-size:12px; color:#8b949e;">Use layout buttons below or WASD keys to move your avatar token</div>
+            <div class="grid" id="grid"></div>
+            <div class="controls">
+                <div></div><button onclick="movePlayer(0, -1)">▲</button><div></div>
+                <button onclick="movePlayer(-1, 0)">◀</button><div></div><button onclick="movePlayer(1, 0)">▶</button>
+                <div></div><button onclick="movePlayer(0, 1)">▼</button><div></div>
+            </div>
         </div>
-        <canvas id="arcadeCanvas" width="440" height="360"></canvas>
+        <div class="chat-column">
+            <h3>💬 Live Commit-Chat Stream</h3>
+            <div class="chat-box" id="chatBox"></div>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="chatInput" placeholder="Broadcasting message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button style="width:80px;" onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById("arcadeCanvas");
-        const ctx = canvas.getContext("2d");
-        const menuOverlay = document.getElementById("menu-overlay");
-        const launchBtn = document.getElementById("launch-btn");
-        const menuTitle = document.getElementById("menu-title");
-        const scoreElem = document.getElementById("score");
-        const livesElem = document.getElementById("lives");
+<script>
+    let GITHUB_TOKEN = "";
+    let REPO_OWNER = "";
+    let REPO_NAME = "";
+    let ISSUE_NUMBER = "";
+    
+    let username = "Pilot_" + Math.floor(Math.random() * 900 + 100);
+    let playerX = Math.floor(Math.random() * 8);
+    let playerY = Math.floor(Math.random() * 8);
+    let playerColor = "#" + Math.floor(Math.random()*16777215).toString(16);
 
-        // --- SOUND SYSTEM ---
-        let audioCtx = null;
-        function playTone(freq, type, duration) {
-            try {
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch(e) { console.log("Audio context blocked"); }
+    let processedCommentIds = new Set();
+    let globalGameState = {};
+
+    // Initial Engine Authentication Bindings
+    function initializeConnection() {
+        GITHUB_TOKEN = document.getElementById('token').value.trim();
+        REPO_OWNER = document.getElementById('owner').value.trim();
+        REPO_NAME = document.getElementById('repo').value.trim();
+        ISSUE_NUMBER = document.getElementById('issueId').value.trim();
+
+        if(!GITHUB_TOKEN || !REPO_OWNER || !REPO_NAME || !ISSUE_NUMBER) {
+            alert("❌ Core engine fields missing structural configuration values.");
+            return;
         }
 
-        // --- CONFIGURATION ---
-        let score = 0;
-        let lives = 3;
-        let active = false;
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('arena').style.display = 'flex';
+        
+        generateGrid();
+        // Register local structural baseline state
+        broadcastState("join", `System matrix entered by user: ${username}`);
+        
+        // Boot execution cycle sync engine loop
+        setInterval(fetchServerSync, 3500);
+        fetchServerSync();
+    }
 
-        const paddleW = 70;
-        const paddleH = 10;
-        let paddleX = (canvas.width - paddleW) / 2;
-        let leftKey = false;
-        let rightKey = false;
-
-        const ballSize = 5;
-        let ballX, ballY, moveX, moveY;
-
-        const rows = 4;
-        const cols = 7;
-        const bW = 52;
-        const bH = 14;
-        const bPad = 6;
-        const bTop = 40;
-        const bLeft = 21;
-        let bricks = [];
-        const colors = ["#ef4444", "#f97316", "#10b981", "#3b82f6"];
-
-        function resetPositions() {
-            ballX = canvas.width / 2;
-            ballY = canvas.height - 25;
-            moveX = 2.5;
-            moveY = -2.5;
-            paddleX = (canvas.width - paddleW) / 2;
-        }
-
-        function createGrid() {
-            bricks = [];
-            for(let c=0; c<cols; c++) {
-                bricks[c] = [];
-                for(let r=0; r<rows; r++) {
-                    bricks[c][r] = { x: 0, y: 0, live: 1 };
-                }
+    function generateGrid() {
+        const gridElement = document.getElementById('grid');
+        gridElement.innerHTML = "";
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${x}-${y}`;
+                gridElement.appendChild(cell);
             }
         }
+        renderLocalPositions();
+    }
 
-        // --- INPUT ENGINE ---
-        document.addEventListener("keydown", (e) => {
-            if(e.key === "ArrowLeft") leftKey = true;
-            if(e.key === "ArrowRight") rightKey = true;
-        });
-        document.addEventListener("keyup", (e) => {
-            if(e.key === "ArrowLeft") leftKey = false;
-            if(e.key === "ArrowRight") rightKey = false;
-        });
-        canvas.addEventListener("mousemove", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const rootX = e.clientX - rect.left;
-            if(rootX > 0 && rootX < canvas.width) {
-                paddleX = rootX - paddleW / 2;
-            }
+    function renderLocalPositions() {
+        // Clear board visually before recalculating data metrics
+        document.querySelectorAll('.cell').forEach(c => {
+            c.innerText = "";
+            c.style.background = "#161b22";
         });
 
-        // --- GAME ENGINE LOOP ---
-        function loop() {
-            if(!active) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Render Bricks & Detect Hits
-            let clusters = 0;
-            for(let c=0; c<cols; c++) {
-                for(let r=0; r<rows; r++) {
-                    let b = bricks[c][r];
-                    if(b.live === 1) {
-                        clusters++;
-                        b.x = (c * (bW + bPad)) + bLeft;
-                        b.y = (r * (bH + bPad)) + bTop;
-                        ctx.fillStyle = colors[r];
-                        ctx.fillRect(b.x, b.y, bW, bH);
-
-                        if(ballX > b.x && ballX < b.x + bW && ballY > b.y && ballY < b.y + bH) {
-                            moveY = -moveY;
-                            b.live = 0;
-                            score += 10;
-                            scoreElem.textContent = String(score).padStart(4, '0');
-                            playTone(440, 'sawtooth', 0.1);
-                        }
-                    }
-                }
+        // Loop dynamic online tracking profiles
+        Object.keys(globalGameState).forEach(user => {
+            const data = globalGameState[user];
+            const targetCell = document.getElementById(`cell-${data.x}-${data.y}`);
+            if(targetCell) {
+                targetCell.innerText = user === username ? "🛸" : "👾";
+                targetCell.style.background = data.color || '#58a6ff';
             }
-
-            if(clusters === 0) {
-                playTone(587, 'square', 0.4);
-                endSession("YOU WIN!");
-                return;
-            }
-
-            // Render Paddle
-            ctx.fillStyle = "#38bdf8";
-            ctx.fillRect(paddleX, canvas.height - paddleH - 5, paddleW, paddleH);
-
-            // Render Ball
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballSize, 0, Math.PI*2);
-            ctx.fillStyle = "#ffffff";
-            ctx.fill();
-
-            // Wall Collisions
-            if(ballX + moveX > canvas.width - ballSize || ballX + moveX < ballSize) moveX = -moveX;
-            if(ballY + moveY < ballSize) moveY = -moveY;
-            else if(ballY + moveY > canvas.height - ballSize - 5) {
-                if(ballX > paddleX && ballX < paddleX + paddleW) {
-                    moveY = -Math.abs(moveY);
-                    playTone(220, 'triangle', 0.08);
-                } else if(ballY + moveY > canvas.height) {
-                    lives--;
-                    livesElem.textContent = lives;
-                    playTone(110, 'sawtooth', 0.3);
-                    if(lives <= 0) {
-                        endSession("GAME OVER");
-                        return;
-                    } else {
-                        resetPositions();
-                    }
-                }
-            }
-
-            if(rightKey && paddleX < canvas.width - paddleW) paddleX += 6;
-            if(leftKey && paddleX > 0) paddleX -= 6;
-
-            ballX += moveX;
-            ballY += moveY;
-            requestAnimationFrame(loop);
-        }
-
-        function endSession(msg) {
-            active = false;
-            menuTitle.textContent = msg;
-            launchBtn.textContent = "PLAY AGAIN";
-            menuOverlay.classList.remove("hidden");
-        }
-
-        launchBtn.addEventListener("click", () => {
-            score = 0;
-            lives = 3;
-            scoreElem.textContent = "0000";
-            livesElem.textContent = "3";
-            createGrid();
-            resetPositions();
-            menuOverlay.classList.add("hidden");
-            active = true;
-            loop();
         });
+    }
 
-        // Background Pre-render
-        createGrid();
-        for(let c=0; c<cols; c++) {
-            for(let r=0; r<rows; r++) {
-                let b = bricks[c][r];
-                b.x = (c * (bW + bPad)) + bLeft;
-                b.y = (r * (bH + bPad)) + bTop;
-                ctx.fillStyle = colors[r];
-                ctx.fillRect(b.x, b.y, bW, bH);
-            }
+    function movePlayer(dx, dy) {
+        let newX = Math.max(0, Math.min(7, playerX + dx));
+        let newY = Math.max(0, Math.min(7, playerY + dy));
+        if(newX !== playerX || newY !== playerY) {
+            playerX = newX;
+            playerY = newY;
+            broadcastState("move", `Maneuvered vector positions to standard coordinate sector (${playerX}, ${playerY})`);
         }
-    </script>
-</body>
-</html>
+    }
 
+    // Keyboard navigation hooks
+    window.addEventListener('keydown', (e) => {
+        if(document.activeElement === document.getElementById('chatInput')) return;
+        if(e.key.toLowerCase() === 'w' || e.key === 'ArrowUp') movePlayer(0, -1);
+        if(e.key.toLowerCase() === 'a' || e.key === 'ArrowLeft') movePlayer(-1, 0);
+        if(e.key.toLowerCase() === 's' || e.key === 'ArrowDown') movePlayer(0, 1);
+        if(e.key.toLowerCase() === 'd' || e.key === 'ArrowRight') movePlayer(1, 0);
+    });
+
+    // Post data metrics up directly into target Issue thread comment matrix
+    async fun broadcastState(actionType, messageText) {
+        const payload = {
+            signature: "GIT_SYNC_DATA_STREAM",
+            user: username,
+            type: actionType,
+            msg: messageText,
+            x: playerX,
+            y: playerY,
+            color: playerColor,
+            time: Date.now()
+        };
+
+        try {
