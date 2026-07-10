@@ -85,7 +85,7 @@
     // --- Key Input Matrix Handlers ---
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
-        e.preventDefault(); // Prevents page from scrolling down automatically
+        e.preventDefault(); 
         isSpacePressed = true;
       }
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
@@ -118,6 +118,29 @@
       z: Math.random() * 1.2
     }));
 
+    // --- Hidden Shift Spark Pool Engine ---
+    let shiftSparks = [];
+
+    function spawnShiftSparks() {
+      // Spawn bursts continuously while slow-mo engine energy steps up
+      if (Math.random() < 0.4) {
+        for (let s = 0; s < 5; s++) {
+          let angle = Math.random() * Math.PI * 2;
+          let speed = 2 + Math.random() * 6;
+          shiftSparks.push({
+            x: 0, // Starts at exact center horizon
+            y: 0,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            z: 1.2, // Starts deep in the background
+            size: 2 + Math.random() * 3,
+            hue: 100 + Math.random() * 50, // Cyber Matrix Greens
+            alpha: 1
+          });
+        }
+      }
+    }
+
     function draw() {
       mouse.x += (mouse.targetX - mouse.x) * 0.1;
       mouse.y += (mouse.targetY - mouse.y) * 0.1;
@@ -130,8 +153,8 @@
       // Calculate speed dynamically using space emergency breaks and chrono-shifts
       let baseSpeed = 0.0012;
       let targetSpeed = baseSpeed + (warpEnergy * 0.015);
-      targetSpeed *= (1 - brakeEnergy * 0.9);   // Spacebar blocks 90% forward momentum
-      targetSpeed *= (1 - slowMoEnergy * 0.8);  // Shift key drops speeds down by 80%
+      targetSpeed *= (1 - brakeEnergy * 0.9);   
+      targetSpeed *= (1 - slowMoEnergy * 0.8);  
 
       let speedModifier = targetSpeed;
 
@@ -142,6 +165,11 @@
 
       // Increment global frame tracking scaled by time-dilation constraints
       frame += 1 * (1 - slowMoEnergy * 0.7);
+
+      // Spawn particles dynamically if Shift key tracking state registers high values
+      if (slowMoEnergy > 0.1) {
+        spawnShiftSparks();
+      }
 
       // Phase 1: Star Vectors Deep Layer
       spaceStars.forEach(star => {
@@ -166,7 +194,6 @@
           ctx.moveTo(px, py);
           ctx.lineTo(sx, sy);
           
-          // Space bar forces stars to change into burning hot plasma red vectors
           let starColor = `rgba(0, 243, 255, ${Math.min(1, 1.2 - star.z)})`;
           if (brakeEnergy > 0.05) {
             starColor = `rgba(255, ${40 * (1 - brakeEnergy)}, ${40 * (1 - brakeEnergy)}, ${Math.min(1, 1.2 - star.z)})`;
@@ -178,13 +205,48 @@
         }
       });
 
+      // Phase 1.5: Render Hidden Chrono-Spark Particles
+      // Center convergence shifts cleanly alongside active mouse trackings
+      let horizonX = width / 2 + (mouse.x - width / 2) * 0.25;
+      let horizonY = height / 2 + (mouse.y - height / 2) * 0.25;
+
+      for (let i = shiftSparks.length - 1; i >= 0; i--) {
+        let p = shiftSparks[i];
+        
+        // Move particle out toward camera screen space planes
+        p.z -= speedModifier * 3.5; 
+        p.x += p.vx * (1 - slowMoEnergy * 0.5);
+        p.y += p.vy * (1 - slowMoEnergy * 0.5);
+
+        // Slow down particle drift over frame iterations
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+
+        let pScale = 1.2 / p.z;
+        let px = horizonX + p.x * pScale;
+        let py = horizonY + p.y * pScale;
+
+        // Decay particle rendering visibility if it moves past camera lens space
+        if (p.z <= 0.1 || px < 0 || px > width || py < 0 || py > height) {
+          shiftSparks.splice(i, 1);
+          continue;
+        }
+
+        // Fade away naturally if user lets go of Shift key early
+        let finalAlpha = p.alpha * (1 - p.z / 1.2) * slowMoEnergy;
+
+        ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${finalAlpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, Math.max(0.5, p.size * pScale), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       // Phase 2: Render Geometric Topology Loops
       for (let i = maxRings - 1; i >= 0; i--) {
         let ring = rings[i];
         ring.z -= speedModifier;
         if (ring.z <= 0) ring.z = 1.2;
 
-        // 3D Matrix Perspective Projection Calculations (Spacebar expands the view field)
         let zoomFactor = 0.95 + (warpEnergy * 0.8) - (brakeEnergy * 0.45);
         let scale = zoomFactor / ring.z;
         let radius = 45 * scale;
@@ -192,22 +254,20 @@
         let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * (0.75 - brakeEnergy * 0.2));
         let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * (0.75 - brakeEnergy * 0.2));
 
-        // Color computation layer matrix
         let hue = (i * 8 + frame * 2.5) % 360;
         let saturation = 100;
         let lightness = 65;
 
-        // Stack visual design filters based on your current input combo mixes
         if (warpEnergy > 0.1) {
           hue = 180 + (hue * 0.1);
           lightness += warpEnergy * 35;
         }
         if (slowMoEnergy > 0.1) {
-          hue = 120 + (hue * 0.05); // Chrono Slow matrix forces green shift
+          hue = 120 + (hue * 0.05); 
           lightness = 50 + (slowMoEnergy * 15);
         }
         if (brakeEnergy > 0.1) {
-          hue = 0 + (hue * 0.05); // Brake compression forces fire red shift
+          hue = 0 + (hue * 0.05); 
           lightness = 45 + (brakeEnergy * 20);
         }
 
@@ -218,7 +278,6 @@
           let spinAngle = frame * (0.003 + warpEnergy * 0.008 - brakeEnergy * 0.002) * (1.2 - ring.z);
           let angle = (j / segments) * Math.PI * 2 + spinAngle;
 
-          // Space brake injects a structural rippling noise profile directly into rings
           let currentRadius = radius;
           if (brakeEnergy > 0.05) {
             currentRadius += Math.sin(frame * 0.1 + i) * (8 * brakeEnergy);
@@ -233,20 +292,3 @@
         ctx.closePath();
 
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = Math.max(0.8, (2.8 + (warpEnergy * 3) + (brakeEnergy * 2)) * (1 - ring.z / 1.2));
-        ctx.stroke();
-
-        // Warp tracking matrix overlay crosshairs lines helper layer
-        if (isWarpActive && i % 6 === 0) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.03 * (1 - ring.z)})`;
-          ctx.fill();
-        }
-      }
-
-      requestAnimationFrame(draw);
-    }
-
-    draw();
-  </script>
-</body>
-</html>
