@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>3D Hyper Cyber Tunnel</title>
+  <title>3D Hyper Cyber Tunnel Engine</title>
   <style>
     * { 
       margin: 0; 
@@ -30,13 +30,11 @@
 
   <script>
     const canvas = document.getElementById('tunnelCanvas');
-    // Performance optimization: turn off base canvas alpha rendering channels
     const ctx = canvas.getContext('2d', { alpha: false }); 
 
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
-    // Fluid tracking variables to prevent mouse motion snapping
     let mouse = { x: width / 2, y: height / 2, targetX: width / 2, targetY: height / 2 };
 
     const updatePointer = (clientX, clientY) => {
@@ -54,24 +52,26 @@
       height = canvas.height = window.innerHeight;
     });
 
-    // --- Interactive Combo System ---
+    // --- Core State Machine & Combo Metrics ---
     let clickCount = 0;
     let clickTimer = null;
     let isWarpActive = false;
-    let warpEnergy = 0; // Animates from 0 (normal) to 1 (full hyper-warp)
+    let isSpacePressed = false;
+    let isShiftPressed = false;
+
+    // Smooth Interpolation Energy Mixers
+    let warpEnergy = 0;   // Animates from 0 to 1 (Triple Click)
+    let brakeEnergy = 0;  // Animates from 0 to 1 (Spacebar)
+    let slowMoEnergy = 0; // Animates from 0 to 1 (Shift Key)
 
     const handleInteraction = () => {
       clickCount++;
       clearTimeout(clickTimer);
-
-      // Reset count if user pauses clicking for too long
       clickTimer = setTimeout(() => { clickCount = 0; }, 400);
 
-      // Trigger structural event on the exact 3rd action frame
       if (clickCount === 3) {
         isWarpActive = true;
         clickCount = 0;
-        // Automatically slow back down smoothly after 3.5 seconds
         setTimeout(() => { isWarpActive = false; }, 3500);
       }
     };
@@ -82,9 +82,29 @@
       handleInteraction();
     }, { passive: true });
 
+    // --- Key Input Matrix Handlers ---
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault(); // Prevents page from scrolling down automatically
+        isSpacePressed = true;
+      }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        isShiftPressed = true;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        isSpacePressed = false;
+      }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        isShiftPressed = false;
+      }
+    });
+
     // --- Engine Configuration Core ---
     const maxRings = 50; 
-    const segments = 8; // Octagonal grid matrix mapping
+    const segments = 8; 
     let rings = [];
     let frame = 0;
 
@@ -92,30 +112,38 @@
       rings.push({ z: (i / maxRings) * 1.2 });
     }
 
-    // Velocity field background particles
-    const spaceStars = Array.from({ length: 80 }, () => ({
+    const spaceStars = Array.from({ length: 85 }, () => ({
       x: (Math.random() - 0.5) * 1000,
       y: (Math.random() - 0.5) * 1000,
       z: Math.random() * 1.2
     }));
 
     function draw() {
-      // Dynamic linear dampening calculations for modern displays
       mouse.x += (mouse.targetX - mouse.x) * 0.1;
       mouse.y += (mouse.targetY - mouse.y) * 0.1;
 
-      // Smoothly interpolate current engine speeds towards targets
-      let targetWarp = isWarpActive ? 1 : 0;
-      warpEnergy += (targetWarp - warpEnergy) * 0.05;
+      // Smoothly interpolate active layout metric modifier values
+      warpEnergy += ((isWarpActive ? 1 : 0) - warpEnergy) * 0.05;
+      brakeEnergy += ((isSpacePressed ? 1 : 0) - brakeEnergy) * 0.15;
+      slowMoEnergy += ((isShiftPressed ? 1 : 0) - slowMoEnergy) * 0.1;
 
-      let speedModifier = 0.0012 + (warpEnergy * 0.015);
+      // Calculate speed dynamically using space emergency breaks and chrono-shifts
+      let baseSpeed = 0.0012;
+      let targetSpeed = baseSpeed + (warpEnergy * 0.015);
+      targetSpeed *= (1 - brakeEnergy * 0.9);   // Spacebar blocks 90% forward momentum
+      targetSpeed *= (1 - slowMoEnergy * 0.8);  // Shift key drops speeds down by 80%
 
-      // Set trailing motion blur based on structural velocity
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.16 - (warpEnergy * 0.08)})`;
+      let speedModifier = targetSpeed;
+
+      // Trailing backdrop computation adjustments based on active mechanics
+      let trailingBlur = 0.16 - (warpEnergy * 0.08) + (brakeEnergy * 0.12);
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.max(0.05, Math.min(0.4, trailingBlur))})`;
       ctx.fillRect(0, 0, width, height);
-      frame++;
 
-      // Phase 1: Deep Vector Space Stars (Stretch into lines under Hyper-Warp)
+      // Increment global frame tracking scaled by time-dilation constraints
+      frame += 1 * (1 - slowMoEnergy * 0.7);
+
+      // Phase 1: Star Vectors Deep Layer
       spaceStars.forEach(star => {
         star.z -= speedModifier * 2.2;
         if (star.z <= 0) {
@@ -128,7 +156,6 @@
         let sx = width / 2 + (star.x + (mouse.x - width / 2) * -0.4) * starScale;
         let sy = height / 2 + (star.y + (mouse.y - height / 2) * -0.4) * starScale;
 
-        // Calculate tail positions to generate warp velocity lines
         let prevZ = star.z + (speedModifier * 2.2);
         let prevScale = 1.2 / prevZ;
         let px = width / 2 + (star.x + (mouse.x - width / 2) * -0.4) * prevScale;
@@ -138,41 +165,67 @@
           ctx.beginPath();
           ctx.moveTo(px, py);
           ctx.lineTo(sx, sy);
-          ctx.strokeStyle = `rgba(0, 243, 255, ${Math.min(1, 1.2 - star.z)})`;
+          
+          // Space bar forces stars to change into burning hot plasma red vectors
+          let starColor = `rgba(0, 243, 255, ${Math.min(1, 1.2 - star.z)})`;
+          if (brakeEnergy > 0.05) {
+            starColor = `rgba(255, ${40 * (1 - brakeEnergy)}, ${40 * (1 - brakeEnergy)}, ${Math.min(1, 1.2 - star.z)})`;
+          }
+          
+          ctx.strokeStyle = starColor;
           ctx.lineWidth = Math.max(1, starScale * 0.4);
           ctx.stroke();
         }
       });
 
-      // Phase 2: Render 3D Geometry Loops
+      // Phase 2: Render Geometric Topology Loops
       for (let i = maxRings - 1; i >= 0; i--) {
         let ring = rings[i];
         ring.z -= speedModifier;
-
         if (ring.z <= 0) ring.z = 1.2;
 
-        // 3D Matrix Perspective Projection Calculations
-        let scale = (0.95 + (warpEnergy * 0.8)) / ring.z;
+        // 3D Matrix Perspective Projection Calculations (Spacebar expands the view field)
+        let zoomFactor = 0.95 + (warpEnergy * 0.8) - (brakeEnergy * 0.45);
+        let scale = zoomFactor / ring.z;
         let radius = 45 * scale;
 
-        let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * 0.75);
-        let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * 0.75);
+        let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * (0.75 - brakeEnergy * 0.2));
+        let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * (0.75 - brakeEnergy * 0.2));
 
-        // Compute colors (shift to electric white/cyan when full warp energy is reached)
+        // Color computation layer matrix
         let hue = (i * 8 + frame * 2.5) % 360;
-        let strokeColor = `hsla(${hue}, 100%, 65%, ${1 - ring.z / 1.2})`;
+        let saturation = 100;
+        let lightness = 65;
+
+        // Stack visual design filters based on your current input combo mixes
         if (warpEnergy > 0.1) {
-          strokeColor = `hsla(${180 + (hue * 0.1)}, 100%, ${65 + (warpEnergy * 35)}%, ${1 - ring.z / 1.2})`;
+          hue = 180 + (hue * 0.1);
+          lightness += warpEnergy * 35;
         }
+        if (slowMoEnergy > 0.1) {
+          hue = 120 + (hue * 0.05); // Chrono Slow matrix forces green shift
+          lightness = 50 + (slowMoEnergy * 15);
+        }
+        if (brakeEnergy > 0.1) {
+          hue = 0 + (hue * 0.05); // Brake compression forces fire red shift
+          lightness = 45 + (brakeEnergy * 20);
+        }
+
+        let strokeColor = `hsla(${hue}, ${saturation}%, ${lightness}%, ${1 - ring.z / 1.2})`;
 
         ctx.beginPath();
         for (let j = 0; j <= segments; j++) {
-          // Dynamic clockwise axial rotation speed alterations
-          let spinAngle = frame * (0.003 + warpEnergy * 0.008) * (1.2 - ring.z);
+          let spinAngle = frame * (0.003 + warpEnergy * 0.008 - brakeEnergy * 0.002) * (1.2 - ring.z);
           let angle = (j / segments) * Math.PI * 2 + spinAngle;
 
-          let currX = targetX + Math.cos(angle) * radius;
-          let currY = targetY + Math.sin(angle) * radius;
+          // Space brake injects a structural rippling noise profile directly into rings
+          let currentRadius = radius;
+          if (brakeEnergy > 0.05) {
+            currentRadius += Math.sin(frame * 0.1 + i) * (8 * brakeEnergy);
+          }
+
+          let currX = targetX + Math.cos(angle) * currentRadius;
+          let currY = targetY + Math.sin(angle) * currentRadius;
 
           if (j === 0) ctx.moveTo(currX, currY);
           else ctx.lineTo(currX, currY);
@@ -180,10 +233,10 @@
         ctx.closePath();
 
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = Math.max(0.8, (2.8 + (warpEnergy * 3)) * (1 - ring.z / 1.2));
+        ctx.lineWidth = Math.max(0.8, (2.8 + (warpEnergy * 3) + (brakeEnergy * 2)) * (1 - ring.z / 1.2));
         ctx.stroke();
 
-        // Under high warp vectors, draw connecting crosshairs across rings
+        // Warp tracking matrix overlay crosshairs lines helper layer
         if (isWarpActive && i % 6 === 0) {
           ctx.fillStyle = `rgba(255, 255, 255, ${0.03 * (1 - ring.z)})`;
           ctx.fill();
