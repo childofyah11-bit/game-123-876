@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Void Marauders: Sector Extraction</title>
+    <title>game link</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         :root {
@@ -87,8 +87,8 @@
         }
         .hud-val { font-weight: bold; font-family: 'Orbitron', sans-serif; }
     </style>
-    <!-- Public server connection client network asset library -->
-    <script src="https://unpkg.com"></script>
+    <!-- FIXED: Bound to a completely static CDN build to prevent modern script module initialization crashes -->
+    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
 
@@ -100,7 +100,7 @@
         <canvas id="gameCanvas" width="940" height="520"></canvas>
         <div class="hud">
             <div>🚀 SHIP ID: <span class="hud-val" id="hudId" style="color:var(--neon-green)">---</span></div>
-            <div>⚔️ LOADOUT: <span class="hud-val" id="hudLoadout" style="color:var(--neon-blue)">PLASMA [1]</span></div>
+            <div>⚔️ LOADOUT: <span class="hud-val" id="hudLoadout" style="color:var(--neon-blue)">PLASMA</span></div>
             <div>🛡️ CORE EXP: <span class="hud-val" id="hudExp" style="color:var(--neon-gold)">0 XP</span></div>
             <div>🏆 FRAGS: <span class="hud-val" id="hudFrags" style="color:var(--neon-pink)">0 KILLS</span></div>
         </div>
@@ -118,13 +118,11 @@
     const networkTopic = `voidmarauders/sectors/global-action-theater`;
     document.getElementById('hudId').innerText = myID;
 
-    // Local Physics Configuration State
     let ship = {
         id: myID, x: Math.random() * (canvas.width - 200) + 100, y: Math.random() * (canvas.height - 200) + 100,
         vx: 0, vy: 0, speed: 4.8, angle: 0, weapon: 1, exp: 0, frags: 0, color: '#00ffaa'
     };
 
-    // Global arrays tracking active simulation entities
     let localLasers = [], remotePlayers = {}, remoteLasers = [];
     let aiDrones = [], cargoNodes = [], particles = [], messageFloats = [];
     const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -138,10 +136,11 @@
     });
 
     function connectToRelayNetwork() {
+        // Connect over free public HiveMQ open web broker layer automatically
         mqttClient = mqtt.connect('wss://://hivemq.com');
 
         mqttClient.on('connect', () => {
-            updateMonitor(`🛰️ Sector link established. Scanning radar array grids...`);
+            updateMonitor(`🛰️ RADAR LINK ONLINE | PILOT ID: ${myID}`);
             mqttClient.subscribe(networkTopic);
             emitPulse('spawn', ship);
         });
@@ -164,7 +163,10 @@
             } catch (e) {}
         });
 
-        // Prune stale network entities (4-second timeout limit)
+        mqttClient.on('error', (err) => {
+            console.error("Broker connection drop caught:", err);
+        });
+
         setInterval(() => {
             let cutoff = Date.now() - 4000;
             Object.keys(remotePlayers).forEach(p => { if (remotePlayers[p].ts < cutoff) delete remotePlayers[p]; });
@@ -174,9 +176,9 @@
     function initializeInputTracking() {
         window.addEventListener('keydown', e => {
             if (e.key in keys) keys[e.key] = true;
-            if (e.key === '1') { ship.weapon = 1; document.getElementById('hudLoadout').innerText = "PLASMA [1]"; document.getElementById('hudLoadout').style.color = "var(--neon-blue)"; }
-            if (e.key === '2') { ship.weapon = 2; document.getElementById('hudLoadout').innerText = "TRI-BEAM [2]"; document.getElementById('hudLoadout').style.color = "var(--neon-green)"; }
-            if (e.key === '3') { ship.weapon = 3; document.getElementById('hudLoadout').innerText = "SLUG-CORE [3]"; document.getElementById('hudLoadout').style.color = "var(--neon-pink)"; }
+            if (e.key === '1') { ship.weapon = 1; document.getElementById('hudLoadout').innerText = "PLASMA"; document.getElementById('hudLoadout').style.color = "var(--neon-blue)"; }
+            if (e.key === '2') { ship.weapon = 2; document.getElementById('hudLoadout').innerText = "TRI-BEAM"; document.getElementById('hudLoadout').style.color = "var(--neon-green)"; }
+            if (e.key === '3') { ship.weapon = 3; document.getElementById('hudLoadout').innerText = "SLUG-CORE"; document.getElementById('hudLoadout').style.color = "var(--neon-pink)"; }
         });
         window.addEventListener('keyup', e => { if (e.key in keys) keys[e.key] = false; });
         
@@ -189,14 +191,13 @@
     }
 
     function dispatchWeaponBlast() {
-        let now = Date.now();
-        if (ship.weapon === 1) { // Standard Rapid Plasma
+        if (ship.weapon === 1) { 
             localLasers.push(createLaser(ship.angle, 12, 35, 'var(--neon-blue)', 1));
-        } else if (ship.weapon === 2) { // Tri-Beam Spread Layout
+        } else if (ship.weapon === 2) { 
             localLasers.push(createLaser(ship.angle, 10, 30, 'var(--neon-green)', 0.6));
-            localLasers.push(createLaser(ship.angle - 0.2, 10, 30, 'var(--neon-green)', 0.6));
-            localLasers.push(createLaser(ship.angle + 0.2, 10, 30, 'var(--neon-green)', 0.6));
-        } else if (ship.weapon === 3) { // Heavy Kinetic Slug
+            localLasers.push(createLaser(ship.angle - 0.18, 10, 30, 'var(--neon-green)', 0.6));
+            localLasers.push(createLaser(ship.angle + 0.18, 10, 30, 'var(--neon-green)', 0.6));
+        } else if (ship.weapon === 3) { 
             localLasers.push(createLaser(ship.angle, 16, 60, 'var(--neon-pink)', 3.5, 6));
         }
     }
@@ -213,11 +214,10 @@
         ship.y = Math.random() * (canvas.height - 200) + 100;
         ship.vx = 0; ship.vy = 0;
         updateMonitor(`💥 COMBAT WARNING: HULL LIQUIDATED BY ${attacker}! RE-MANUFACTURING NODE...`);
+        setTimeout(() => { updateMonitor(`🛰️ RADAR LINK ONLINE | PILOT ID: ${myID}`); }, 3000);
     }
 
-    // Main Engine Lifecycle Thread Frame Loop
     function engineFrameTick() {
-        // --- 1. HANDLE MECHANICAL LOCAL PHYSICS ---
         ship.vx = 0; ship.vy = 0;
         if (keys.w || keys.ArrowUp) ship.vy = -ship.speed;
         if (keys.s || keys.ArrowDown) ship.vy = ship.speed;
@@ -225,3 +225,4 @@
         if (keys.d || keys.ArrowRight) ship.vx = ship.speed;
 
         ship.x = Math.max(15, Math.min(canvas.width - 15, ship.x + ship.vx));
+        ship.y = Math.max(15, Math.min(canvas.height - 15, ship.y + ship.vy));
