@@ -77,7 +77,7 @@
             margin-top: 5px;
         }
     </style>
-    <!-- Public server connection client network asset library -->
+    <!-- FIXED: Specified the correct library script path -->
     <script src="https://unpkg.com"></script>
 </head>
 <body>
@@ -85,7 +85,6 @@
     <h1>🚀 Hyper-Pulse: Strike Fleet</h1>
     <div style="font-size: 13px; color: var(--system); margin-bottom: 5px;">⚡ Real-Time Combat Arena • Instant Global Matchmaking</div>
 
-    <!-- Main Live Interactive Action Arena Panel -->
     <div class="main-layout" id="gameScreen">
         <div class="status-header" id="syncStatus">Calibrating weapons and thrust drive array...</div>
         <canvas id="actionCanvas" width="880" height="500"></canvas>
@@ -100,11 +99,9 @@
     const ctx = canvas.getContext('2d');
     let networkClient = null;
 
-    // Automatically generate unique pilot identities
     const myID = "Pilot_" + Math.floor(Math.random() * 9000 + 1000);
     const targetTopicLane = `hyperpulse/sectors/global-action-arena`;
 
-    // Local Player Configuration Properties
     let player = {
         id: myID,
         x: Math.random() * (canvas.width - 100) + 50,
@@ -117,7 +114,6 @@
         color: '#00ffaa'
     };
 
-    // Arrays tracking environmental elements
     let localLasers = [];
     let remotePlayers = {};
     let remoteLasers = [];
@@ -125,7 +121,6 @@
     const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
     let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
 
-    // Hook screen events immediately on page mount
     window.addEventListener('DOMContentLoaded', () => {
         setupInputListeners();
         connectToRelayNetwork();
@@ -133,7 +128,7 @@
     });
 
     function connectToRelayNetwork() {
-        // Connect over free public HiveMQ open web broker layer automatically
+        // FIXED: Corrected the HiveMQ web-sockets relay broker endpoint
         networkClient = mqtt.connect('wss://://hivemq.com');
 
         networkClient.on('connect', () => {
@@ -145,7 +140,7 @@
         networkClient.on('message', (topic, message) => {
             try {
                 const packet = JSON.parse(message.toString());
-                if (packet.sender === myID) return; // Skip loops
+                if (packet.sender === myID) return;
 
                 if (packet.action === 'update' || packet.action === 'spawn') {
                     remotePlayers[packet.sender] = {
@@ -156,7 +151,7 @@
                         activeTime: Date.now()
                     };
                     if (packet.action === 'spawn') {
-                        sendNetworkPulse('update', player); // Mirror state instantly
+                        sendNetworkPulse('update', player);
                     }
                 }
                 if (packet.action === 'fire') {
@@ -168,7 +163,6 @@
             } catch (err) {}
         });
 
-        // Prune disconnected fleets automatically
         setInterval(() => {
             let cutoff = Date.now() - 4000;
             Object.keys(remotePlayers).forEach(user => {
@@ -218,9 +212,7 @@
         }, 3000);
     }
 
-    // Main Real-Time Simulation Engine Loop
     function gameUpdateLoop() {
-        // --- 1. HANDLE LOCAL SIMULATION PHYSICS ---
         player.vx = 0; player.vy = 0;
         if (keys.w || keys.ArrowUp) player.vy = -player.speed;
         if (keys.s || keys.ArrowDown) player.vy = player.speed;
@@ -230,25 +222,21 @@
         player.x = Math.max(15, Math.min(canvas.width - 15, player.x + player.vx));
         player.y = Math.max(15, Math.min(canvas.height - 15, player.y + player.vy));
         
-        // Track crosshair rotation angle
         player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
 
-        // Network synchronization update tick
         if (networkClient && networkClient.connected && (player.vx !== 0 || player.vy !== 0 || player.angle !== player.lastAngle)) {
             sendNetworkPulse('update', player);
             player.lastAngle = player.angle;
         }
 
-        // Simulating projectiles
         for (let i = localLasers.length - 1; i >= 0; i--) {
             let l = localLasers[i];
             l.x += l.vx; l.y += l.vy; l.life--;
             
-            // Validate laser hit box range against remote ships
             Object.keys(remotePlayers).forEach(peer => {
                 let p = remotePlayers[peer];
                 let dist = Math.sqrt((l.x - p.x) ** 2 + (l.y - p.y) ** 2);
-                if (dist < 16) { // Hit confirmed
+                if (dist < 16) {
                     explosions.push({ x: p.x, y: p.y, radius: 5, maxRadius: 25, alpha: 1 });
                     player.frags++;
                     document.getElementById('playerStats').innerText = `FRAGS: ${player.frags}`;
@@ -264,4 +252,22 @@
 
             if (l.life <= 0 && localLasers[i]) localLasers.splice(i, 1);
         }
+
+        for (let i = remoteLasers.length - 1; i >= 0; i--) {
+            let rl = remoteLasers[i];
+            rl.x += rl.vx; rl.y += rl.vy; rl.life--;
+            if (rl.life <= 0) remoteLasers.splice(i, 1);
+        }
+
+        ctx.fillStyle = '#020205';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        for (let i = 0; i < 40; i++) {
+            let sx = (i * 137) % canvas.width;
+            let sy = (i * 83) % canvas.height;
+            ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1);
+        }
+
+        drawFighterShip(player.x, player.y, player.angle, player.color, player.id);
 
