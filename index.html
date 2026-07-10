@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>game</title>
+    <title>game link</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         :root {
@@ -34,43 +34,8 @@
             letter-spacing: 3px;
             margin-bottom: 2px;
         }
-        .setup-panel {
-            background: var(--panel);
-            border: 2px solid var(--border);
-            padding: 25px;
-            border-radius: 12px;
-            max-width: 420px;
-            width: 100%;
-            margin-top: 80px;
-            box-shadow: 0 0 25px rgba(0,0,0,0.8);
-            text-align: center;
-        }
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            background: #101222;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
-        input:focus { outline: none; border-color: var(--accent); }
-        button {
-            background: linear-gradient(90deg, var(--accent), #00bfff);
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-            color: #030308;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-        }
-        button:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 0 10px var(--accent); }
         .main-layout {
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             max-width: 800px;
@@ -104,7 +69,8 @@
             transition: background 0.1s, transform 0.1s;
         }
         .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 180px; margin-top: 10px; }
-        .controls button { margin: 0; padding: 14px; background: #16192e; border: 1px solid var(--border); color: white; border-radius: 8px;}
+        .controls button { margin: 0; padding: 14px; background: #16192e; border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .controls button:hover { background: #222744; }
         .status-header { font-size: 15px; color: #8b949e; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
     </style>
     <!-- Public server connection client network asset library -->
@@ -113,20 +79,11 @@
 <body>
 
     <h1>🌌 Cosmic Nexus: Sector Control</h1>
-    <div style="font-size: 14px; color: var(--system); margin-bottom: 10px;">Automated Relay Matrix Sandbox Layer</div>
-
-    <!-- Login Matrix Panel -->
-    <div class="setup-panel" id="loginScreen">
-        <h3 style="color:white; margin-top:0;">📡 Map Sector Telemetry</h3>
-        <input type="text" id="nameBox" placeholder="Enter Your Callsign (e.g., Pilot_1)">
-        <input type="text" id="roomBox" placeholder="Enter Room Key (e.g., alpha-sector)">
-        <button onclick="connectToRelayNetwork()">Launch Orbit Link</button>
-        <p style="font-size: 12px; color: var(--system); margin-top: 15px;">Type any room name. Tell a friend to type the same room name to connect instantly.</p>
-    </div>
+    <div style="font-size: 14px; color: var(--system); margin-bottom: 10px;">Instant Global Matchmaking Arena</div>
 
     <!-- Main Live Interactive Grid Panel -->
     <div class="main-layout" id="gameScreen">
-        <div class="status-header" id="syncStatus">Syncing tracking vector coordinates...</div>
+        <div class="status-header" id="syncStatus">Initializing secure global orbit telemetry...</div>
         <div class="grid" id="matrixContainer"></div>
         <div class="controls">
             <div></div><button onclick="triggerShift(0, -1)">▲</button><div></div>
@@ -137,38 +94,32 @@
 
 <script>
     let networkClient = null;
-    let currentCallsign = "";
-    let targetTopicLane = "";
+    // Automatically generate a random pilot number so you drop in instantly
+    const currentCallsign = "Pilot_" + Math.floor(Math.random() * 9000 + 1000);
+    // Hardcode a single global room key so everyone drops into the exact same server map lane
+    const targetTopicLane = `cosmicnexus/sectors/global-nexus-arena`;
     
     let localX = Math.floor(Math.random() * 10);
     let localY = Math.floor(Math.random() * 10);
     let sessionUserList = {};
 
-    function connectToRelayNetwork() {
-        currentCallsign = document.getElementById('nameBox').value.trim() || "Pilot_" + Math.floor(Math.random()*900+100);
-        let roomSignature = document.getElementById('roomBox').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-        if(!roomSignature) {
-            alert("❌ Please specify a Room Key name to calibrate your telemetry engine.");
-            return;
-        }
-
-        targetTopicLane = `cosmicnexus/sectors/${roomSignature}`;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('gameScreen').style.display = 'flex';
-        
+    // Auto-run connection routing immediately on page footprint mount
+    window.addEventListener('DOMContentLoaded', () => {
         buildInteractiveGrid();
+        connectToRelayNetwork();
+    });
 
+    function connectToRelayNetwork() {
         // Connect over free public HiveMQ open web broker layer automatically
         networkClient = mqtt.connect('wss://://hivemq.com');
 
         networkClient.on('connect', () => {
-            document.getElementById('syncStatus').innerText = `Sector: ${roomSignature} | Pilot: ${currentCallsign}`;
+            document.getElementById('syncStatus').innerText = `GLOBAL ARENA ACTIVE | Call-sign: ${currentCallsign}`;
             
-            // Subscribe to room updates
+            // Subscribe to the unified room lane updates
             networkClient.subscribe(targetTopicLane);
             
-            // Instantly announce presence
+            // Instantly announce presence to players already inside the channel space
             sendNetworkPulse('join', `connected`);
         });
 
@@ -181,7 +132,7 @@
                     sessionUserList[packet.sender] = { x: packet.gridX, y: packet.gridY, activeTime: Date.now() };
                     renderPositions();
                     if(packet.action === 'join') {
-                        // Respond with position metrics to register on their client instantly
+                        // Respond back with position metrics to register instantly on the newcomer's browser tab
                         sendNetworkPulse('sync', 'updating matrix positioning data');
                     }
                 }
@@ -252,3 +203,32 @@
         let nextY = Math.max(0, Math.min(9, localY + dy));
         if(nextX !== localX || nextY !== localY) {
             localX = nextX;
+            localY = nextY;
+            renderPositions();
+            sendNetworkPulse('move', 'adjusted coordinates');
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if(key === 'w' || key === 'arrowup') triggerShift(0, -1);
+        if(key === 'a' || key === 'arrowleft') triggerShift(-1, 0);
+        if(key === 's' || key === 'arrowdown') triggerShift(0, 1);
+        if(key === 'd' || key === 'arrowright') triggerShift(1, 0);
+    });
+
+    function sendNetworkPulse(actionType, detailText) {
+        if(!networkClient || !networkClient.connected) return;
+        const payload = {
+            sender: currentCallsign,
+            action: actionType,
+            payloadText: detailText,
+            gridX: localX,
+            gridY: localY,
+            timestamp: Date.now()
+        };
+        networkClient.publish(targetTopicLane, JSON.stringify(payload));
+    }
+</script>
+</body>
+</html>
