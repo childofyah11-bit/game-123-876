@@ -11,7 +11,8 @@
             --panel: #0a0b12;
             --border: #1a1d36;
             --accent: #00ffaa;
-            --accent2: #9d4edd;
+            --accent2: #ff0055;
+            --cyber: #00ffff;
             --text: #c5cbe3;
             --system: #565f89;
         }
@@ -23,8 +24,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
             overflow: hidden;
+            user-select: none;
         }
         h1 {
             font-family: 'Orbitron', sans-serif;
@@ -32,81 +34,102 @@
             text-shadow: 0 0 12px rgba(0, 255, 170, 0.4);
             text-transform: uppercase;
             letter-spacing: 3px;
-            margin-bottom: 2px;
+            margin: 0 0 2px 0;
         }
         .main-layout {
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 10px;
             background: var(--panel);
             border: 1px solid var(--border);
-            padding: 25px;
+            padding: 15px;
             border-radius: 12px;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(10, 55px);
-            grid-template-rows: repeat(10, 55px);
-            gap: 6px;
-            margin: 15px 0;
+        canvas {
+            display: block;
             background: #020205;
-            padding: 12px;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid var(--border);
+            box-shadow: inset 0 0 20px rgba(0,230,184,0.05);
+            cursor: crosshair;
         }
-        .cell {
-            background: #0e101f;
-            border: 1px solid #16192e;
-            border-radius: 6px;
+        .status-header { 
+            font-size: 14px; 
+            color: #8b949e; 
+            letter-spacing: 1px; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+        }
+        .hud-overlay {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            transition: background 0.1s, transform 0.1s;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 880px;
+            font-size: 13px;
+            color: var(--cyber);
+            margin-top: 5px;
         }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 180px; margin-top: 10px; }
-        .controls button { margin: 0; padding: 14px; background: #16192e; border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; font-size: 16px; }
-        .controls button:hover { background: #222744; }
-        .status-header { font-size: 15px; color: #8b949e; letter-spacing: 1px; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
     </style>
     <!-- Public server connection client network asset library -->
     <script src="https://unpkg.com"></script>
 </head>
 <body>
 
-    <h1>🌌 Cosmic Nexus: Sector Control</h1>
-    <div style="font-size: 14px; color: var(--system); margin-bottom: 10px;">Instant Global Matchmaking Arena</div>
+    <h1>🚀 Hyper-Pulse: Strike Fleet</h1>
+    <div style="font-size: 13px; color: var(--system); margin-bottom: 5px;">⚡ Real-Time Combat Arena • Instant Global Matchmaking</div>
 
-    <!-- Main Live Interactive Grid Panel -->
+    <!-- Main Live Interactive Action Arena Panel -->
     <div class="main-layout" id="gameScreen">
-        <div class="status-header" id="syncStatus">Initializing secure global orbit telemetry...</div>
-        <div class="grid" id="matrixContainer"></div>
-        <div class="controls">
-            <div></div><button onclick="triggerShift(0, -1)">▲</button><div></div>
-            <button onclick="triggerShift(-1, 0)">◀</button><div></div><button onclick="triggerShift(1, 0)">▶</button>
-            <div></div><button onclick="triggerShift(0, 1)">▼</button><div></div>
+        <div class="status-header" id="syncStatus">Calibrating weapons and thrust drive array...</div>
+        <canvas id="actionCanvas" width="880" height="500"></canvas>
+        <div class="hud-overlay">
+            <div>⌨️ WASD / Arrows to Fly • 🖱️ Move Mouse to Aim • Left Click to Fire Plasma</div>
+            <div id="playerStats">FRAGS: 0</div>
         </div>
     </div>
 
 <script>
+    const canvas = document.getElementById('actionCanvas');
+    const ctx = canvas.getContext('2d');
     let networkClient = null;
-    // Automatically generate a random pilot number so you drop in instantly
-    const currentCallsign = "Pilot_" + Math.floor(Math.random() * 9000 + 1000);
-    // Hardcode a single global room key so everyone drops into the exact same server map lane
-    const targetTopicLane = `cosmicnexus/sectors/global-nexus-arena`;
-    
-    let localX = Math.floor(Math.random() * 10);
-    let localY = Math.floor(Math.random() * 10);
-    let sessionUserList = {};
 
-    // Auto-run connection routing immediately on page footprint mount
+    // Automatically generate unique pilot identities
+    const myID = "Pilot_" + Math.floor(Math.random() * 9000 + 1000);
+    const targetTopicLane = `hyperpulse/sectors/global-action-arena`;
+
+    // Local Player Configuration Properties
+    let player = {
+        id: myID,
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: Math.random() * (canvas.height - 100) + 50,
+        vx: 0,
+        vy: 0,
+        angle: 0,
+        speed: 4.5,
+        frags: 0,
+        color: '#00ffaa'
+    };
+
+    // Arrays tracking environmental elements
+    let localLasers = [];
+    let remotePlayers = {};
+    let remoteLasers = [];
+    let explosions = [];
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
+
+    // Hook screen events immediately on page mount
     window.addEventListener('DOMContentLoaded', () => {
-        buildInteractiveGrid();
+        setupInputListeners();
         connectToRelayNetwork();
+        requestAnimationFrame(gameUpdateLoop);
     });
 
     function connectToRelayNetwork() {
@@ -114,121 +137,131 @@
         networkClient = mqtt.connect('wss://://hivemq.com');
 
         networkClient.on('connect', () => {
-            document.getElementById('syncStatus').innerText = `GLOBAL ARENA ACTIVE | Call-sign: ${currentCallsign}`;
-            
-            // Subscribe to the unified room lane updates
+            document.getElementById('syncStatus').innerText = `COMBAT READY | CALLSIGN: ${myID}`;
             networkClient.subscribe(targetTopicLane);
-            
-            // Instantly announce presence to players already inside the channel space
-            sendNetworkPulse('join', `connected`);
+            sendNetworkPulse('spawn', player);
         });
 
         networkClient.on('message', (topic, message) => {
             try {
                 const packet = JSON.parse(message.toString());
-                if(packet.sender === currentCallsign) return; // Skip echo reflections
+                if (packet.sender === myID) return; // Skip loops
 
-                if(packet.action === 'join' || packet.action === 'sync' || packet.action === 'move') {
-                    sessionUserList[packet.sender] = { x: packet.gridX, y: packet.gridY, activeTime: Date.now() };
-                    renderPositions();
-                    if(packet.action === 'join') {
-                        // Respond back with position metrics to register instantly on the newcomer's browser tab
-                        sendNetworkPulse('sync', 'updating matrix positioning data');
+                if (packet.action === 'update' || packet.action === 'spawn') {
+                    remotePlayers[packet.sender] = {
+                        x: packet.data.x,
+                        y: packet.data.y,
+                        angle: packet.data.angle,
+                        frags: packet.data.frags,
+                        activeTime: Date.now()
+                    };
+                    if (packet.action === 'spawn') {
+                        sendNetworkPulse('update', player); // Mirror state instantly
                     }
                 }
-            } catch(err) {
-                // Ignore unexpected stream garbage safely
-            }
+                if (packet.action === 'fire') {
+                    remoteLasers.push(packet.data);
+                }
+                if (packet.action === 'eliminated' && packet.targetId === myID) {
+                    triggerRespawn(packet.sender);
+                }
+            } catch (err) {}
         });
 
-        // Loop to prune disconnected players (inactive for 12 seconds)
+        // Prune disconnected fleets automatically
         setInterval(() => {
-            let cutoff = Date.now() - 12000;
-            let changed = false;
-            Object.keys(sessionUserList).forEach(user => {
-                if(sessionUserList[user].activeTime < cutoff) {
-                    delete sessionUserList[user];
-                    changed = true;
+            let cutoff = Date.now() - 4000;
+            Object.keys(remotePlayers).forEach(user => {
+                if (remotePlayers[user].activeTime < cutoff) delete remotePlayers[user];
+            });
+        }, 2000);
+    }
+
+    function setupInputListeners() {
+        window.addEventListener('keydown', e => { if (e.key in keys) keys[e.key] = true; });
+        window.addEventListener('keyup', e => { if (e.key in keys) keys[e.key] = false; });
+        
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            if (e.button === 0) firePlasmaLaser();
+        });
+    }
+
+    function firePlasmaLaser() {
+        let laser = {
+            id: myID + "_" + Date.now(),
+            owner: myID,
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(player.angle) * 12,
+            vy: Math.sin(player.angle) * 12,
+            life: 45
+        };
+        localLasers.push(laser);
+        sendNetworkPulse('fire', laser);
+    }
+
+    function triggerRespawn(attackerName) {
+        explosions.push({ x: player.x, y: player.y, radius: 10, maxRadius: 35, alpha: 1 });
+        player.x = Math.random() * (canvas.width - 100) + 50;
+        player.y = Math.random() * (canvas.height - 100) + 50;
+        player.vx = 0;
+        player.vy = 0;
+        document.getElementById('syncStatus').innerText = `💥 SHIP VAPORIZED BY ${attackerName}! RESPAWNING...`;
+        setTimeout(() => {
+            document.getElementById('syncStatus').innerText = `COMBAT READY | CALLSIGN: ${myID}`;
+        }, 3000);
+    }
+
+    // Main Real-Time Simulation Engine Loop
+    function gameUpdateLoop() {
+        // --- 1. HANDLE LOCAL SIMULATION PHYSICS ---
+        player.vx = 0; player.vy = 0;
+        if (keys.w || keys.ArrowUp) player.vy = -player.speed;
+        if (keys.s || keys.ArrowDown) player.vy = player.speed;
+        if (keys.a || keys.ArrowLeft) player.vx = -player.speed;
+        if (keys.d || keys.ArrowRight) player.vx = player.speed;
+
+        player.x = Math.max(15, Math.min(canvas.width - 15, player.x + player.vx));
+        player.y = Math.max(15, Math.min(canvas.height - 15, player.y + player.vy));
+        
+        // Track crosshair rotation angle
+        player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+
+        // Network synchronization update tick
+        if (networkClient && networkClient.connected && (player.vx !== 0 || player.vy !== 0 || player.angle !== player.lastAngle)) {
+            sendNetworkPulse('update', player);
+            player.lastAngle = player.angle;
+        }
+
+        // Simulating projectiles
+        for (let i = localLasers.length - 1; i >= 0; i--) {
+            let l = localLasers[i];
+            l.x += l.vx; l.y += l.vy; l.life--;
+            
+            // Validate laser hit box range against remote ships
+            Object.keys(remotePlayers).forEach(peer => {
+                let p = remotePlayers[peer];
+                let dist = Math.sqrt((l.x - p.x) ** 2 + (l.y - p.y) ** 2);
+                if (dist < 16) { // Hit confirmed
+                    explosions.push({ x: p.x, y: p.y, radius: 5, maxRadius: 25, alpha: 1 });
+                    player.frags++;
+                    document.getElementById('playerStats').innerText = `FRAGS: ${player.frags}`;
+                    if (networkClient) {
+                        networkClient.publish(targetTopicLane, JSON.stringify({
+                            sender: myID, action: 'eliminated', targetId: peer
+                        }));
+                    }
+                    localLasers.splice(i, 1);
+                    return;
                 }
             });
-            if(changed) renderPositions();
-        }, 4000);
-    }
 
-    function buildInteractiveGrid() {
-        const grid = document.getElementById('matrixContainer');
-        grid.innerHTML = "";
-        for (let y = 0; y < 10; y++) {
-            for (let x = 0; x < 10; x++) {
-                let cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.id = `grid-sector-${x}-${y}`;
-                grid.appendChild(cell);
-            }
-        }
-        renderPositions();
-    }
-
-    function renderPositions() {
-        document.querySelectorAll('.cell').forEach(c => {
-            c.innerText = "";
-            c.style.background = "#0e101f";
-            c.style.borderColor = "#16192e";
-            c.style.transform = "scale(1)";
-        });
-
-        // Pin local coordinate entity profile
-        const localCell = document.getElementById(`grid-sector-${localX}-${localY}`);
-        if(localCell) {
-            localCell.innerText = "🛸";
-            localCell.style.background = "rgba(0, 255, 170, 0.15)";
-            localCell.style.borderColor = "var(--accent)";
-            localCell.style.transform = "scale(1.05)";
+            if (l.life <= 0 && localLasers[i]) localLasers.splice(i, 1);
         }
 
-        // Pin mapped online player assets
-        Object.keys(sessionUserList).forEach(user => {
-            const data = sessionUserList[user];
-            const peerCell = document.getElementById(`grid-sector-${data.x}-${data.y}`);
-            if(peerCell) {
-                peerCell.innerText = "👾";
-                peerCell.style.background = "rgba(157, 78, 221, 0.15)";
-                peerCell.style.borderColor = "var(--accent2)";
-            }
-        });
-    }
-
-    function triggerShift(dx, dy) {
-        let nextX = Math.max(0, Math.min(9, localX + dx));
-        let nextY = Math.max(0, Math.min(9, localY + dy));
-        if(nextX !== localX || nextY !== localY) {
-            localX = nextX;
-            localY = nextY;
-            renderPositions();
-            sendNetworkPulse('move', 'adjusted coordinates');
-        }
-    }
-
-    window.addEventListener('keydown', (e) => {
-        const key = e.key.toLowerCase();
-        if(key === 'w' || key === 'arrowup') triggerShift(0, -1);
-        if(key === 'a' || key === 'arrowleft') triggerShift(-1, 0);
-        if(key === 's' || key === 'arrowdown') triggerShift(0, 1);
-        if(key === 'd' || key === 'arrowright') triggerShift(1, 0);
-    });
-
-    function sendNetworkPulse(actionType, detailText) {
-        if(!networkClient || !networkClient.connected) return;
-        const payload = {
-            sender: currentCallsign,
-            action: actionType,
-            payloadText: detailText,
-            gridX: localX,
-            gridY: localY,
-            timestamp: Date.now()
-        };
-        networkClient.publish(targetTopicLane, JSON.stringify(payload));
-    }
-</script>
-</body>
-</html>
