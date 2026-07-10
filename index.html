@@ -1,107 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Cyber Tunnel</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; overflow: hidden; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3D Vector Cyber Tunnel Engine</title>
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+    body { 
+      background-color: #050508; 
+      overflow: hidden; 
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    canvas { 
+      display: block; 
+      width: 100vw; 
+      height: 100vh; 
+      cursor: crosshair;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="tunnelCanvas"></canvas>
+  <canvas id="tunnelCanvas"></canvas>
 
-    <script>
-        const canvas = document.getElementById('tunnelCanvas');
-        const ctx = canvas.getContext('2d');
+  <script>
+    const canvas = document.getElementById('tunnelCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Performance tweak: disables alpha blending channel on canvas base
 
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
 
-        // Track mouse movement to warp the tunnel perspective
-        let mouse = { x: width / 21, y: height / 2 };
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
-        window.addEventListener('touchmove', (e) => {
-            mouse.x = e.touches[0].clientX;
-            mouse.y = e.touches[0].clientY;
-        });
+    let mouse = { x: width / 2, y: height / 2, targetX: width / 2, targetY: height / 2 };
+    
+    // Smooth pointer interpolation tracking (Prevents snapping jitter)
+    const pointerHandler = (x, y) => {
+      mouse.targetX = x;
+      mouse.targetY = y;
+    };
 
-        // Handle screen resizing smoothly
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
+    window.addEventListener('mousemove', (e) => pointerHandler(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => {
+      if(e.touches.length > 0) pointerHandler(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
 
-        let rings = [];
-        const maxRings = 100; // Total number of depth layers
-        let frame = 0.00000001;
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
 
-        // Initialize tunnel rings with depth positions
-        for (let i = 0; i < maxRings; i++) {
-            rings.push({ z: i * (1 / maxRings) });
+    // Configuration Engine Variables
+    const maxRings = 45;       // Optimized ring depth allocation density
+    const segments = 8;       // Upgraded to Octagonal structure matrix for a sleeker sci-fi look
+    let rings = [];
+    let speed = 0.006;        // Base engine forward translation warp velocity
+    let frame = 0;
+
+    // Initialize depth coordinates
+    for (let i = 0; i < maxRings; i++) {
+      rings.push({ z: (i / maxRings) * 1.2 });
+    }
+
+    // Secondary Spatial Vector Stars Particle Array
+    const stars = Array.from({ length: 60 }, () => ({
+      x: (Math.random() - 0.5) * 800,
+      y: (Math.random() - 0.5) * 800,
+      z: Math.random() * 1.2
+    }));
+
+    function draw() {
+      // Linear mouse tracking dampening simulation loop
+      mouse.x += (mouse.targetX - mouse.x) * 0.08;
+      mouse.y += (mouse.targetY - mouse.y) * 0.08;
+
+      // Dark sci-fi trailing motion-blur backdrop execution
+      ctx.fillStyle = 'rgba(5, 5, 8, 0.18)';
+      ctx.fillRect(0, 0, width, height);
+      frame++;
+
+      // Phase 1: Draw Deep Background Space Vector Particles
+      stars.forEach(star => {
+        star.z -= speed * 1.5; // Stars sprint past faster for depth variation
+        if (star.z <= 0) star.z = 1.2;
+
+        let starScale = 1.2 / star.z;
+        let sx = width / 2 + (star.x + (mouse.x - width / 2) * -0.3) * starScale;
+        let sy = height / 2 + (star.y + (mouse.y - height / 2) * -0.3) * starScale;
+
+        if (sx >= 0 && sx <= width && sy >= 0 && sy <= height) {
+          ctx.fillStyle = `rgba(0, 173, 181, ${Math.min(1, 1 - star.z)})`;
+          ctx.fillRect(sx, sy, Math.max(1, starScale * 0.6), Math.max(1, starScale * 0.6));
+        }
+      });
+
+      // Phase 2: Render 3D Octagonal Tunnel Topology
+      for (let i = maxRings - 1; i >= 0; i--) {
+        let ring = rings[i];
+        ring.z -= speed;
+
+        if (ring.z <= 0) {
+          ring.z = 1.2; // Recycles far depth plane gracefully
         }
 
-        function draw() {
-            // Draw a slightly translucent background to create trailing motion blur
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            ctx.fillRect(0, 0, width, height);
+        // 3D Perspective Projections Calculations
+        let scale = 1.0 / ring.z;
+        let radius = 60 * scale; 
 
-            frame++;
+        // Warp center convergence offsets away from direct user sightlines
+        let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z * 0.7);
+        let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z * 0.7);
 
-            // Loop backward from furthest ring to closest ring to handle visual layering
-            for (let i = maxRings - 1; i >= 0; i--) {
-                let ring = rings[i];
-                
-                // Move the ring closer to the screen
-                ring.z -= 0.0009; 
-                
-                // If a ring passes the camera screen, reset it back to the far distance
-                if (ring.z <= 0) {
-                    ring.z = 1.1;
-                }
+        // Core Synthesizer Cyber Palette Calculations
+        let hue = (i * 7 + frame * 1.5) % 360;
+        let alpha = Math.min(1, 1.2 - ring.z) * (1 - (ring.z / 1.2));
 
-                // 3D Perspective Calculation: Smaller size at distance z, larger size up close
-                let scale = 0.91 / ring.z;
-                let radius = 40 * scale;
+        ctx.beginPath();
+        
+        // Loop segment construction nodes linking points securely across canvas pipelines
+        for (let j = 0; j <= segments; j++) {
+          // Dynamic clockwise rotational offset twist calculations
+          let spinAngle = frame * 0.003 * (1.2 - ring.z);
+          let angle = (j / segments) * Math.PI * 2 + spinAngle;
+          
+          let currX = targetX + Math.cos(angle) * radius;
+          let currY = targetY + Math.sin(angle) * radius;
 
-                // Dynamically calculate the center of the ring based on mouse position and depth
-                let targetX = width / 2 + (mouse.x - width / 2) * (1 - ring.z);
-                let targetY = height / 2 + (mouse.y - height / 2) * (1 - ring.z);
-
-                // Create shifting rainbow colors through the deep tunnel
-                let hue = (i * 12 + frame * 2) % 390;
-
-                ctx.beginPath();
-                // Draw geometric geometric rings with segments
-                const segments = 6;
-                for (let j = 0; j <= segments; j++) {
-                    let angle = (j / segments) * Math.PI * 2 + (frame * 0.005 * scale);
-                    let currX = targetX + Math.cos(angle) * radius;
-                    let currY = targetY + Math.sin(angle) * radius;
-
-                    if (j === 0) {
-                        ctx.moveTo(currX, currY);
-                    } else {
-                        ctx.lineTo(currX, currY);
-                    }
-                }
-                ctx.closePath();
-
-                // Style the 3D grid lines
-                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, ${1 - ring.z})`;
-                ctx.lineWidth = Math.max(1, 3 * (1 - ring.z));
-                ctx.stroke();
-            }
-
-            requestAnimationFrame(draw);
+          if (j === 0) {
+            ctx.moveTo(currX, currY);
+          } else {
+            ctx.lineTo(currX, currY);
+          }
         }
+        ctx.closePath();
 
-        draw(); // Run animation loop
-    </script>
+        // Neon Glow Vector Styling Engine Links
+        ctx.strokeStyle = `hsla(${hue}, 95%, 55%, ${alpha})`;
+        ctx.lineWidth = Math.max(0.8, 3.5 * (1 - ring.z / 1.2));
+        ctx.stroke();
+
+        // Optional: Occasional grid connector lines between depth fields
+        if (i % 4 === 0) {
+          ctx.fillStyle = `hsla(${hue}, 90%, 50%, ${alpha * 0.04})`;
+          ctx.fill();
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    // Start Engine
+    draw();
+  </script>
 </body>
 </html>
